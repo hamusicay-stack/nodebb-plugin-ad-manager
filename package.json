@@ -1,0 +1,10 @@
+{
+  "name": "nodebb-plugin-ad-manager",
+  "version": "1.0.0",
+  "description": "Ad manager plugin for NodeBB",
+  "main": "library.js",
+  "nbbpm": {
+    "compatibility": "^3.0.0 || ^2.0.0 || ^1.0.0"
+  },
+  "dependencies": {}
+}
