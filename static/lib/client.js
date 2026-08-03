@@ -8,6 +8,10 @@ $(document).ready(function () {
 		initAdManager();
 	});
 
+	$(window).on('resize scroll', function () {
+		repositionSideBanners();
+	});
+
 	function initAdManager() {
 		fetch(config.relative_path + '/api/plugins/ad-manager/ads')
 			.then(function (response) {
@@ -16,6 +20,7 @@ $(document).ready(function () {
 			.then(function (data) {
 				if (data && data.success && Array.isArray(data.ads)) {
 					injectAds(data.ads);
+					setTimeout(repositionSideBanners, 200);
 				}
 			})
 			.catch(function (err) {
@@ -60,82 +65,43 @@ $(document).ready(function () {
 				.addClass('nodebb-ad-manager-unit nodebb-ad-location-' + loc)
 				.html(innerContent);
 
-			const isDesktop = $(window).width() >= 1200;
-
 			if (loc === 'top') {
-				$target = $('#content, [component="header"], main').first();
-				injectionMode = 'prepend';
+				// Top Banner: Positioned BELOW Hot Topics / Breadcrumbs
+				$target = $('[component="category/hot-topics"], .hot-topics, [component="breadcrumb"], .breadcrumb-container').first();
+				if ($target.length) {
+					injectionMode = 'after';
+				} else {
+					$target = $('#content, [component="header"], main').first();
+					injectionMode = 'prepend';
+				}
 				$container.css({
 					'display': 'block',
 					'width': '100%',
-					'max-width': '1000px',
+					'max-width': '1100px',
 					'margin': '15px auto',
 					'text-align': 'center',
 					'clear': 'both'
 				});
 			} else if (loc === 'bottom') {
-				$target = $('#content, main').first();
-				injectionMode = 'append';
+				// Bottom Banner: Positioned ABOVE Black Footer
+				$target = $('footer, [component="footer"], .footer, #footer').first();
+				if ($target.length) {
+					injectionMode = 'before';
+				} else {
+					$target = $('#content, main').first();
+					injectionMode = 'append';
+				}
 				$container.css({
 					'display': 'block',
 					'width': '100%',
-					'max-width': '1000px',
+					'max-width': '1100px',
 					'margin': '20px auto 15px auto',
 					'text-align': 'center',
 					'clear': 'both'
 				});
-			} else if (loc === 'sidebar-right') {
+			} else if (loc === 'sidebar-right' || loc === 'sidebar-left') {
 				$target = $('body');
 				injectionMode = 'append';
-				if (isDesktop) {
-					$container.css({
-						'position': 'fixed',
-						'top': '110px',
-						'right': '75px',
-						'left': 'auto',
-						'width': '160px',
-						'max-height': '480px',
-						'z-index': '80',
-						'box-sizing': 'border-box',
-						'text-align': 'center'
-					});
-				} else {
-					$target = $('#content, main').first();
-					injectionMode = 'prepend';
-					$container.css({
-						'display': 'block',
-						'width': '100%',
-						'max-width': '300px',
-						'margin': '15px auto',
-						'text-align': 'center'
-					});
-				}
-			} else if (loc === 'sidebar-left') {
-				$target = $('body');
-				injectionMode = 'append';
-				if (isDesktop) {
-					$container.css({
-						'position': 'fixed',
-						'top': '110px',
-						'left': '75px',
-						'right': 'auto',
-						'width': '160px',
-						'max-height': '480px',
-						'z-index': '80',
-						'box-sizing': 'border-box',
-						'text-align': 'center'
-					});
-				} else {
-					$target = $('#content, main').first();
-					injectionMode = 'prepend';
-					$container.css({
-						'display': 'block',
-						'width': '100%',
-						'max-width': '300px',
-						'margin': '15px auto',
-						'text-align': 'center'
-					});
-				}
 			} else if (loc === 'custom' && ad.selector) {
 				$target = $(ad.selector);
 				injectionMode = 'prepend';
@@ -155,7 +121,11 @@ $(document).ready(function () {
 				return;
 			}
 
-			if (injectionMode === 'append') {
+			if (injectionMode === 'after') {
+				$target.after($container);
+			} else if (injectionMode === 'before') {
+				$target.before($container);
+			} else if (injectionMode === 'append') {
 				$target.append($container);
 			} else {
 				$target.prepend($container);
@@ -166,7 +136,69 @@ $(document).ready(function () {
 				trackAdClick(ad.id);
 			});
 		});
+
+		repositionSideBanners();
 	}
+
+	function repositionSideBanners() {
+		const $mainContent = $('#content, [component="brand/wrapper"], main').first();
+		if (!$mainContent.length) {
+			return;
+		}
+
+		const rect = $mainContent[0].getBoundingClientRect();
+		const windowWidth = $(window).width();
+		const bannerWidth = 160;
+
+		$('.nodebb-ad-location-sidebar-right').each(function () {
+			const spaceOnRight = windowWidth - rect.right;
+			// If there's enough space outside main content box (excluding fixed icon bar)
+			if (spaceOnRight >= (bannerWidth + 70)) {
+				$(this).css({
+					'position': 'fixed',
+					'top': '140px',
+					'left': (rect.right + 10) + 'px',
+					'right': 'auto',
+					'width': bannerWidth + 'px',
+					'display': 'block',
+					'z-index': '80'
+				});
+			} else {
+				// Prevent covering content: collapse side banner cleanly if window is too narrow
+				$(this).css({
+					'position': 'static',
+					'display': 'block',
+					'width': '100%',
+					'max-width': '300px',
+					'margin': '15px auto'
+				});
+			}
+		});
+
+		$('.nodebb-ad-location-sidebar-left').each(function () {
+			const spaceOnLeft = rect.left;
+			if (spaceOnLeft >= (bannerWidth + 70)) {
+				$(this).css({
+					'position': 'fixed',
+					'top': '140px',
+					'left': (rect.left - bannerWidth - 10) + 'px',
+					'right': 'auto',
+					'width': bannerWidth + 'px',
+					'display': 'block',
+					'z-index': '80'
+				});
+			} else {
+				$(this).css({
+					'position': 'static',
+					'display': 'block',
+					'width': '100%',
+					'max-width': '300px',
+					'margin': '15px auto'
+				});
+			}
+		});
+	}
+
 
 	function injectRecentFeedAds(ad) {
 		const $topics = $('[component="category/topic"], ul.topic-list > li.category-item, [component="topic/teaser"]');

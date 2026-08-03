@@ -1,4 +1,4 @@
-<div id="ad-manager-acp" class="acp-page-container pt-3">
+<div id="ad-manager-acp" class="acp-page-container pt-3 w-100">
 	<!-- Page Header & Action Bar -->
 	<div class="card mb-4 shadow-sm">
 		<div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
@@ -20,24 +20,24 @@
 	</div>
 
 	<!-- Ad Units Table Card -->
-	<div class="card shadow-sm">
+	<div class="card shadow-sm w-100">
 		<div class="card-header bg-light">
 			<h5 class="card-title mb-0">יחידות פרסום מוגדרות</h5>
 		</div>
 		<div class="card-body p-0">
 			<div class="table-responsive">
-				<table class="table table-hover table-striped mb-0 align-middle">
+				<table class="table table-hover table-striped mb-0 align-middle w-100" style="min-width: 1000px;">
 					<thead class="table-dark">
 						<tr>
-							<th style="width: 5%;" class="text-center">פעיל</th>
-							<th style="width: 12%;">שם יחידה</th>
-							<th style="width: 18%;">מיקום בפורום</th>
-							<th style="width: 20%;">קישור לתמונה</th>
-							<th style="width: 18%;">קישור יעד (URL)</th>
-							<th style="width: 12%;">תאריך תפוגה</th>
-							<th style="width: 8%;">קוד HTML</th>
-							<th style="width: 4%;" class="text-center">קליקים</th>
-							<th style="width: 3%;" class="text-center">פעולות</th>
+							<th style="width: 50px;" class="text-center">פעיל</th>
+							<th style="min-width: 140px;">שם יחידה</th>
+							<th style="min-width: 220px;">מיקום בפורום</th>
+							<th style="min-width: 260px;">קישור לתמונה (JPG, PNG, GIF)</th>
+							<th style="min-width: 220px;">קישור יעד (URL)</th>
+							<th style="min-width: 140px;">תאריך תפוגה</th>
+							<th style="min-width: 120px;">קוד HTML</th>
+							<th style="width: 70px;" class="text-center">קליקים</th>
+							<th style="width: 60px;" class="text-center">פעולות</th>
 						</tr>
 					</thead>
 					<tbody id="ad-units-tbody">
@@ -49,10 +49,10 @@
 								</div>
 							</td>
 							<td>
-								<input type="text" class="form-control ad-name" placeholder="שם היחידה" value="{ads.name}">
+								<input type="text" class="form-control form-control-sm ad-name" placeholder="שם היחידה" value="{ads.name}">
 							</td>
 							<td>
-								<select class="form-select ad-location mb-1">
+								<select class="form-select form-select-sm ad-location mb-1">
 									<option value="top">באנר עליון (לרוחב)</option>
 									<option value="bottom">באנר תחתון (לרוחב)</option>
 									<option value="sidebar-right">סרגל צד ימין (לאורך)</option>
@@ -72,19 +72,19 @@
 								</div>
 							</td>
 							<td>
-								<input type="text" class="form-control ad-image mb-1" placeholder="קישור לתמונה (JPG, PNG, GIF, WEBP)" value="{ads.image}">
+								<input type="text" class="form-control form-control-sm ad-image mb-1" placeholder="קישור לתמונה (JPG, PNG, GIF, WEBP)" value="{ads.image}">
 								<div class="text-center">
 									<img src="{ads.image}" class="ad-preview-img img-thumbnail" style="max-height: 40px; max-width: 120px; display: inline-block; margin: 0 auto;" alt="תצוגה מקדימה">
 								</div>
 							</td>
 							<td>
-								<input type="text" class="form-control ad-link" placeholder="https://example.com/target-page" value="{ads.link}">
+								<input type="text" class="form-control form-control-sm ad-link" placeholder="https://example.com/target-page" value="{ads.link}">
 							</td>
 							<td>
-								<input type="date" class="form-control ad-end-date" value="{ads.endDate}" title="תאריך סיום מוצג">
+								<input type="date" class="form-control form-control-sm ad-end-date" value="{ads.endDate}" title="תאריך סיום מוצג">
 							</td>
 							<td>
-								<textarea class="form-control ad-html" rows="1" placeholder="קוד HTML חלופי">{ads.html}</textarea>
+								<textarea class="form-control form-control-sm ad-html" rows="1" placeholder="קוד HTML חלופי">{ads.html}</textarea>
 							</td>
 							<td class="text-center align-middle">
 								<span class="badge bg-info text-dark ad-clicks">{ads.clicks}</span>
@@ -97,9 +97,6 @@
 						</tr>
 						{{{end}}}
 					</tbody>
-
-
-
 				</table>
 			</div>
 		</div>
@@ -113,5 +110,6 @@
 		}
 	});
 </script>
+
 
 
