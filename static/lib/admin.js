@@ -30,21 +30,29 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 		const ad = data || {
 			id: 'ad_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
 			name: '',
-			html: '',
 			selector: '',
+			image: '',
+			link: '',
+			html: '',
 			clicks: 0
 		};
 
 		const rowHtml = `
 			<tr class="ad-unit-row" data-id="${ad.id}">
 				<td>
-					<input type="text" class="form-control ad-name" placeholder="למשל: Header Banner" value="${escapeAttr(ad.name)}">
+					<input type="text" class="form-control ad-name" placeholder="שם היחידה" value="${escapeAttr(ad.name)}">
 				</td>
 				<td>
 					<input type="text" class="form-control ad-selector" placeholder="למשל: #content" value="${escapeAttr(ad.selector)}">
 				</td>
 				<td>
-					<textarea class="form-control ad-html" rows="2" placeholder="<div class='my-ad'>קוד פרסומת</div>">${escapeHtml(ad.html)}</textarea>
+					<input type="text" class="form-control ad-image" placeholder="https://example.com/banner.png" value="${escapeAttr(ad.image)}">
+				</td>
+				<td>
+					<input type="text" class="form-control ad-link" placeholder="https://example.com/target-page" value="${escapeAttr(ad.link)}">
+				</td>
+				<td>
+					<textarea class="form-control ad-html" rows="1" placeholder="קוד HTML חלופי">${escapeHtml(ad.html)}</textarea>
 				</td>
 				<td class="text-center align-middle">
 					<span class="badge bg-info text-dark ad-clicks">${ad.clicks || 0}</span>
@@ -69,10 +77,13 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 				id: $row.attr('data-id'),
 				name: $row.find('.ad-name').val().trim(),
 				selector: $row.find('.ad-selector').val().trim(),
+				image: $row.find('.ad-image').val().trim(),
+				link: $row.find('.ad-link').val().trim(),
 				html: $row.find('.ad-html').val().trim(),
 				clicks: parseInt($row.find('.ad-clicks').text(), 10) || 0
 			});
 		});
+
 
 		$.ajax({
 			url: config.relative_path + '/api/admin/plugins/ad-manager/ads',

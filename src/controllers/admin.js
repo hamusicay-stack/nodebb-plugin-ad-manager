@@ -62,10 +62,13 @@ adminController.saveAds = async function (req, res, next) {
 		const formattedAds = ads.map(ad => ({
 			id: ad.id || `ad_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
 			name: String(ad.name || '').trim(),
-			html: String(ad.html || '').trim(),
 			selector: String(ad.selector || '').trim(),
+			image: String(ad.image || '').trim(),
+			link: String(ad.link || '').trim(),
+			html: String(ad.html || '').trim(),
 			clicks: parseInt(ad.clicks, 10) || 0
 		}));
+
 
 		await db.setObjectField(DB_KEY, 'units', JSON.stringify(formattedAds));
 

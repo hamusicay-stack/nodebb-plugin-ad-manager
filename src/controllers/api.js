@@ -27,13 +27,29 @@ async function getStoredAds() {
 apiController.getAds = async function (req, res, next) {
 	try {
 		const ads = await getStoredAds();
-		// Only return active ads that have both HTML and CSS selector defined
-		const activeAds = ads.filter(ad => ad.html && ad.selector);
+		// Active ads must have a selector and either HTML code OR image + target link
+		const activeAds = ads
+			.filter(ad => ad.selector && (ad.html || (ad.image && ad.link)))
+			.map(ad => {
+				let effectiveHtml = ad.html;
+				if (!effectiveHtml && ad.image && ad.link) {
+					effectiveHtml = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:inline-block; max-width:100%;"><img src="${ad.image}" alt="${ad.name || 'Ad'}" style="max-width:100%; height:auto; border-radius:4px; display:block; margin:0 auto;"></a>`;
+				}
+				return {
+					id: ad.id,
+					name: ad.name,
+					selector: ad.selector,
+					image: ad.image,
+					link: ad.link,
+					html: effectiveHtml
+				};
+			});
 		res.json({ success: true, ads: activeAds });
 	} catch (err) {
 		next(err);
 	}
 };
+
 
 /**
  * Public API: Track click on a specific ad unit

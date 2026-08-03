@@ -29,24 +29,32 @@
 				<table class="table table-hover table-striped mb-0 align-middle">
 					<thead class="table-dark">
 						<tr>
-							<th style="width: 20%;">שם יחידה</th>
-							<th style="width: 25%;">CSS Selector להזרקה</th>
-							<th style="width: 35%;">קוד HTML של המודעה</th>
-							<th style="width: 10%;" class="text-center">קליקים</th>
-							<th style="width: 10%;" class="text-center">פעולות</th>
+							<th style="width: 15%;">שם יחידה</th>
+							<th style="width: 15%;">CSS Selector להזרקה</th>
+							<th style="width: 22%;">קישור לתמונה</th>
+							<th style="width: 22%;">קישור יעד (URL)</th>
+							<th style="width: 16%;">קוד HTML חלופי</th>
+							<th style="width: 5%;" class="text-center">קליקים</th>
+							<th style="width: 5%;" class="text-center">פעולות</th>
 						</tr>
 					</thead>
 					<tbody id="ad-units-tbody">
 						{{{each ads}}}
 						<tr class="ad-unit-row" data-id="{ads.id}">
 							<td>
-								<input type="text" class="form-control ad-name" placeholder="למשל: Header Banner" value="{ads.name}">
+								<input type="text" class="form-control ad-name" placeholder="שם היחידה" value="{ads.name}">
 							</td>
 							<td>
 								<input type="text" class="form-control ad-selector" placeholder="למשל: #content" value="{ads.selector}">
 							</td>
 							<td>
-								<textarea class="form-control ad-html" rows="2" placeholder="<div class='my-ad'>קוד פרסומת</div>">{ads.html}</textarea>
+								<input type="text" class="form-control ad-image" placeholder="https://example.com/banner.png" value="{ads.image}">
+							</td>
+							<td>
+								<input type="text" class="form-control ad-link" placeholder="https://example.com/target-page" value="{ads.link}">
+							</td>
+							<td>
+								<textarea class="form-control ad-html" rows="1" placeholder="קוד HTML חלופי">{ads.html}</textarea>
 							</td>
 							<td class="text-center">
 								<span class="badge bg-info text-dark ad-clicks">{ads.clicks}</span>
@@ -59,9 +67,19 @@
 						</tr>
 						{{{end}}}
 					</tbody>
+
 				</table>
 			</div>
 		</div>
 	</div>
 </div>
+
+<script>
+	require(['admin/plugins/ad-manager'], function (manager) {
+		if (manager && typeof manager.init === 'function') {
+			manager.init();
+		}
+	});
+</script>
+
 
