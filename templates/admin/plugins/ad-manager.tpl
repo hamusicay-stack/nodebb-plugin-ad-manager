@@ -66,3 +66,9 @@
 		</div>
 	</div>
 </div>
+
+<script>
+	require(['admin/plugins/ad-manager'], function (manager) {
+		manager.init();
+	});
+</script>
