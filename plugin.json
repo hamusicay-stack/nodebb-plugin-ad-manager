@@ -10,7 +10,7 @@
 			"method": "init"
 		},
 		{
-			"hook": "filter:admin.header",
+			"hook": "filter:admin.header.build",
 			"method": "addAdminNavigation"
 		}
 	],
