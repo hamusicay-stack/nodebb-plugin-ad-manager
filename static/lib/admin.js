@@ -26,10 +26,21 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 		ACP.saveAds();
 	});
 
+	// Handle location change to toggle custom selector field visibility
+	$(document).off('change', '#ad-manager-acp .ad-location').on('change', '#ad-manager-acp .ad-location', function () {
+		const $row = $(this).closest('.ad-unit-row');
+		if ($(this).val() === 'custom') {
+			$row.find('.ad-selector-wrapper').show();
+		} else {
+			$row.find('.ad-selector-wrapper').hide();
+		}
+	});
+
 	ACP.addAdRow = function (data) {
 		const ad = data || {
 			id: 'ad_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
 			name: '',
+			location: 'top',
 			selector: '',
 			image: '',
 			link: '',
@@ -37,13 +48,25 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 			clicks: 0
 		};
 
+		const loc = ad.location || 'top';
+		const showSelector = loc === 'custom' ? '' : 'display: none;';
+
 		const rowHtml = `
 			<tr class="ad-unit-row" data-id="${ad.id}">
 				<td>
 					<input type="text" class="form-control ad-name" placeholder="שם היחידה" value="${escapeAttr(ad.name)}">
 				</td>
 				<td>
-					<input type="text" class="form-control ad-selector" placeholder="למשל: #content" value="${escapeAttr(ad.selector)}">
+					<select class="form-select ad-location mb-1">
+						<option value="top" ${loc === 'top' ? 'selected' : ''}>באנר עליון (לרוחב)</option>
+						<option value="bottom" ${loc === 'bottom' ? 'selected' : ''}>באנר תחתון (לרוחב)</option>
+						<option value="sidebar-right" ${loc === 'sidebar-right' ? 'selected' : ''}>סרגל צד ימין (לאורך)</option>
+						<option value="sidebar-left" ${loc === 'sidebar-left' ? 'selected' : ''}>סרגל צד שמאל (לאורך)</option>
+						<option value="custom" ${loc === 'custom' ? 'selected' : ''}>סלקטור מותאם אישית</option>
+					</select>
+					<div class="ad-selector-wrapper" style="${showSelector}">
+						<input type="text" class="form-control ad-selector form-control-sm" placeholder="סלקטור, למשל: #content" value="${escapeAttr(ad.selector)}">
+					</div>
 				</td>
 				<td>
 					<input type="text" class="form-control ad-image" placeholder="https://example.com/banner.png" value="${escapeAttr(ad.image)}">
@@ -76,6 +99,7 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 			ads.push({
 				id: $row.attr('data-id'),
 				name: $row.find('.ad-name').val().trim(),
+				location: $row.find('.ad-location').val(),
 				selector: $row.find('.ad-selector').val().trim(),
 				image: $row.find('.ad-image').val().trim(),
 				link: $row.find('.ad-link').val().trim(),
@@ -83,6 +107,7 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 				clicks: parseInt($row.find('.ad-clicks').text(), 10) || 0
 			});
 		});
+
 
 
 		$.ajax({

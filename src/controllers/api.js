@@ -27,9 +27,9 @@ async function getStoredAds() {
 apiController.getAds = async function (req, res, next) {
 	try {
 		const ads = await getStoredAds();
-		// Active ads must have a selector and either HTML code OR image + target link
+		// Active ads must have content (HTML or image+link) and a location or custom selector
 		const activeAds = ads
-			.filter(ad => ad.selector && (ad.html || (ad.image && ad.link)))
+			.filter(ad => (ad.html || (ad.image && ad.link)) && (ad.location || ad.selector))
 			.map(ad => {
 				let effectiveHtml = ad.html;
 				if (!effectiveHtml && ad.image && ad.link) {
@@ -38,6 +38,7 @@ apiController.getAds = async function (req, res, next) {
 				return {
 					id: ad.id,
 					name: ad.name,
+					location: ad.location || 'top',
 					selector: ad.selector,
 					image: ad.image,
 					link: ad.link,
@@ -49,6 +50,7 @@ apiController.getAds = async function (req, res, next) {
 		next(err);
 	}
 };
+
 
 
 /**

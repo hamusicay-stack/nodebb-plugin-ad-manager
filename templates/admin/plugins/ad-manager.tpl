@@ -30,10 +30,10 @@
 					<thead class="table-dark">
 						<tr>
 							<th style="width: 15%;">שם יחידה</th>
-							<th style="width: 15%;">CSS Selector להזרקה</th>
+							<th style="width: 20%;">מיקום בפורום</th>
 							<th style="width: 22%;">קישור לתמונה</th>
 							<th style="width: 22%;">קישור יעד (URL)</th>
-							<th style="width: 16%;">קוד HTML חלופי</th>
+							<th style="width: 11%;">קוד HTML חלופי</th>
 							<th style="width: 5%;" class="text-center">קליקים</th>
 							<th style="width: 5%;" class="text-center">פעולות</th>
 						</tr>
@@ -45,7 +45,16 @@
 								<input type="text" class="form-control ad-name" placeholder="שם היחידה" value="{ads.name}">
 							</td>
 							<td>
-								<input type="text" class="form-control ad-selector" placeholder="למשל: #content" value="{ads.selector}">
+								<select class="form-select ad-location mb-1">
+									<option value="top">באנר עליון (לרוחב)</option>
+									<option value="bottom">באנר תחתון (לרוחב)</option>
+									<option value="sidebar-right">סרגל צד ימין (לאורך)</option>
+									<option value="sidebar-left">סרגל צד שמאל (לאורך)</option>
+									<option value="custom">סלקטור מותאם אישית</option>
+								</select>
+								<div class="ad-selector-wrapper" style="display: none;">
+									<input type="text" class="form-control ad-selector form-control-sm" placeholder="סלקטור, למשל: #content" value="{ads.selector}">
+								</div>
 							</td>
 							<td>
 								<input type="text" class="form-control ad-image" placeholder="https://example.com/banner.png" value="{ads.image}">
@@ -67,6 +76,7 @@
 						</tr>
 						{{{end}}}
 					</tbody>
+
 
 				</table>
 			</div>
