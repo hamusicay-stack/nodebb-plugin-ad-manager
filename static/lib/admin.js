@@ -26,14 +26,19 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 		ACP.saveAds();
 	});
 
-	// Live preview of image (JPG, PNG, GIF, WEBP) in ACP table
-	$(document).off('input change', '#ad-manager-acp .ad-image').on('input change', '#ad-manager-acp .ad-image', function () {
-		const url = $(this).val().trim();
-		const $img = $(this).closest('td').find('.ad-preview-img');
-		if (url) {
-			$img.attr('src', url).show();
+	// Handle location change to toggle custom selector & repeatEvery field visibility
+	$(document).off('change', '#ad-manager-acp .ad-location').on('change', '#ad-manager-acp .ad-location', function () {
+		const $row = $(this).closest('.ad-unit-row');
+		const val = $(this).val();
+		if (val === 'custom') {
+			$row.find('.ad-selector-wrapper').show();
+			$row.find('.ad-repeat-wrapper').hide();
+		} else if (val === 'recent-feed') {
+			$row.find('.ad-selector-wrapper').hide();
+			$row.find('.ad-repeat-wrapper').show();
 		} else {
-			$img.hide();
+			$row.find('.ad-selector-wrapper').hide();
+			$row.find('.ad-repeat-wrapper').hide();
 		}
 	});
 
@@ -42,19 +47,29 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 			id: 'ad_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
 			name: '',
 			location: 'top',
+			repeatEvery: 5,
 			selector: '',
 			image: '',
 			link: '',
 			html: '',
+			endDate: '',
+			active: true,
 			clicks: 0
 		};
 
 		const loc = ad.location || 'top';
 		const showSelector = loc === 'custom' ? '' : 'display: none;';
+		const showRepeat = loc === 'recent-feed' ? '' : 'display: none;';
 		const showPreview = ad.image ? 'block' : 'none';
+		const isActive = ad.active !== false && ad.active !== 'false';
 
 		const rowHtml = `
 			<tr class="ad-unit-row" data-id="${ad.id}">
+				<td class="text-center align-middle">
+					<div class="form-check form-switch d-flex justify-content-center">
+						<input type="checkbox" class="form-check-input ad-active" title="סטטוס פעיל" ${isActive ? 'checked' : ''}>
+					</div>
+				</td>
 				<td>
 					<input type="text" class="form-control ad-name" placeholder="שם היחידה" value="${escapeAttr(ad.name)}">
 				</td>
@@ -64,20 +79,31 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 						<option value="bottom" ${loc === 'bottom' ? 'selected' : ''}>באנר תחתון (לרוחב)</option>
 						<option value="sidebar-right" ${loc === 'sidebar-right' ? 'selected' : ''}>סרגל צד ימין (לאורך)</option>
 						<option value="sidebar-left" ${loc === 'sidebar-left' ? 'selected' : ''}>סרגל צד שמאל (לאורך)</option>
+						<option value="recent-feed" ${loc === 'recent-feed' ? 'selected' : ''}>פיד נושאים אחרונים (/recent)</option>
 						<option value="custom" ${loc === 'custom' ? 'selected' : ''}>סלקטור מותאם אישית</option>
 					</select>
 					<div class="ad-selector-wrapper" style="${showSelector}">
 						<input type="text" class="form-control ad-selector form-control-sm" placeholder="סלקטור, למשל: #content" value="${escapeAttr(ad.selector)}">
 					</div>
+					<div class="ad-repeat-wrapper mt-1" style="${showRepeat}">
+						<div class="input-group input-group-sm">
+							<span class="input-group-text">כל</span>
+							<input type="number" min="1" max="50" class="form-control ad-repeat-every" value="${ad.repeatEvery || 5}">
+							<span class="input-group-text">נושאים</span>
+						</div>
+					</div>
 				</td>
 				<td>
-					<input type="text" class="form-control ad-image" placeholder="קישור לתמונה (JPG, PNG, GIF, WEBP)" value="${escapeAttr(ad.image)}">
-					<div class="mt-1 text-center">
+					<input type="text" class="form-control ad-image mb-1" placeholder="קישור לתמונה (JPG, PNG, GIF, WEBP)" value="${escapeAttr(ad.image)}">
+					<div class="text-center">
 						<img src="${escapeAttr(ad.image)}" class="ad-preview-img img-thumbnail" style="max-height: 40px; max-width: 120px; display: ${showPreview}; margin: 0 auto;" alt="תצוגה מקדימה">
 					</div>
 				</td>
 				<td>
 					<input type="text" class="form-control ad-link" placeholder="https://example.com/target-page" value="${escapeAttr(ad.link)}">
+				</td>
+				<td>
+					<input type="date" class="form-control ad-end-date" value="${escapeAttr(ad.endDate || '')}" title="תאריך סיום מוצג">
 				</td>
 				<td>
 					<textarea class="form-control ad-html" rows="1" placeholder="קוד HTML חלופי">${escapeHtml(ad.html)}</textarea>
@@ -96,7 +122,6 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 		$('#ad-units-tbody').append(rowHtml);
 	};
 
-
 	ACP.saveAds = function () {
 		const ads = [];
 
@@ -104,15 +129,19 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 			const $row = $(this);
 			ads.push({
 				id: $row.attr('data-id'),
+				active: $row.find('.ad-active').is(':checked'),
 				name: $row.find('.ad-name').val().trim(),
 				location: $row.find('.ad-location').val(),
+				repeatEvery: parseInt($row.find('.ad-repeat-every').val(), 10) || 5,
 				selector: $row.find('.ad-selector').val().trim(),
 				image: $row.find('.ad-image').val().trim(),
 				link: $row.find('.ad-link').val().trim(),
+				endDate: $row.find('.ad-end-date').val().trim(),
 				html: $row.find('.ad-html').val().trim(),
 				clicks: parseInt($row.find('.ad-clicks').text(), 10) || 0
 			});
 		});
+
 
 
 

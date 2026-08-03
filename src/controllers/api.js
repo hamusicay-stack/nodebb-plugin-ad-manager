@@ -27,18 +27,35 @@ async function getStoredAds() {
 apiController.getAds = async function (req, res, next) {
 	try {
 		const ads = await getStoredAds();
-		// Active ads must have content (HTML or image+link) and a location or custom selector
+		const now = new Date();
+
 		const activeAds = ads
-			.filter(ad => (ad.html || (ad.image && ad.link)) && (ad.location || ad.selector))
+			.filter(ad => {
+				// 1. Check active status toggle
+				if (ad.active === false || ad.active === 'false') {
+					return false;
+				}
+				// 2. Check expiration date if set
+				if (ad.endDate) {
+					const expDate = new Date(ad.endDate + 'T23:59:59');
+					if (now > expDate) {
+						return false; // Expired
+					}
+				}
+				// 3. Active ads must have content (HTML or image+link) and a location or custom selector
+				return (ad.html || (ad.image && ad.link)) && (ad.location || ad.selector);
+			})
 			.map(ad => {
 				let effectiveHtml = ad.html;
 				if (!effectiveHtml && ad.image && ad.link) {
-					effectiveHtml = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:inline-block; max-width:100%;"><img src="${ad.image}" alt="${ad.name || 'Ad'}" style="max-width:100%; height:auto; border-radius:4px; display:block; margin:0 auto;"></a>`;
+					const maxH = (ad.location === 'recent-feed' || ad.location === 'top' || ad.location === 'bottom') ? '160px' : '460px';
+					effectiveHtml = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%;"><img src="${ad.image}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:${maxH}; object-fit:contain; border-radius:6px; display:block; margin:0 auto;"></a>`;
 				}
 				return {
 					id: ad.id,
 					name: ad.name,
 					location: ad.location || 'top',
+					repeatEvery: parseInt(ad.repeatEvery, 10) || 5,
 					selector: ad.selector,
 					image: ad.image,
 					link: ad.link,
@@ -50,6 +67,7 @@ apiController.getAds = async function (req, res, next) {
 		next(err);
 	}
 };
+
 
 
 

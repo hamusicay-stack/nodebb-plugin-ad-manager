@@ -63,12 +63,16 @@ adminController.saveAds = async function (req, res, next) {
 			id: ad.id || `ad_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
 			name: String(ad.name || '').trim(),
 			location: String(ad.location || 'top').trim(),
+			repeatEvery: Math.max(1, parseInt(ad.repeatEvery, 10) || 5),
 			selector: String(ad.selector || '').trim(),
 			image: String(ad.image || '').trim(),
 			link: String(ad.link || '').trim(),
 			html: String(ad.html || '').trim(),
+			endDate: String(ad.endDate || '').trim(),
+			active: ad.active === true || ad.active === 'true' || ad.active === 'on' || ad.active === 1,
 			clicks: parseInt(ad.clicks, 10) || 0
 		}));
+
 
 
 

@@ -29,18 +29,25 @@
 				<table class="table table-hover table-striped mb-0 align-middle">
 					<thead class="table-dark">
 						<tr>
-							<th style="width: 15%;">שם יחידה</th>
-							<th style="width: 20%;">מיקום בפורום</th>
-							<th style="width: 22%;">קישור לתמונה</th>
-							<th style="width: 22%;">קישור יעד (URL)</th>
-							<th style="width: 11%;">קוד HTML חלופי</th>
-							<th style="width: 5%;" class="text-center">קליקים</th>
-							<th style="width: 5%;" class="text-center">פעולות</th>
+							<th style="width: 5%;" class="text-center">פעיל</th>
+							<th style="width: 12%;">שם יחידה</th>
+							<th style="width: 18%;">מיקום בפורום</th>
+							<th style="width: 20%;">קישור לתמונה</th>
+							<th style="width: 18%;">קישור יעד (URL)</th>
+							<th style="width: 12%;">תאריך תפוגה</th>
+							<th style="width: 8%;">קוד HTML</th>
+							<th style="width: 4%;" class="text-center">קליקים</th>
+							<th style="width: 3%;" class="text-center">פעולות</th>
 						</tr>
 					</thead>
 					<tbody id="ad-units-tbody">
 						{{{each ads}}}
 						<tr class="ad-unit-row" data-id="{ads.id}">
+							<td class="text-center align-middle">
+								<div class="form-check form-switch d-flex justify-content-center">
+									<input type="checkbox" class="form-check-input ad-active" title="סטטוס פעיל" {{{if ads.active}}}checked{{{end}}}>
+								</div>
+							</td>
 							<td>
 								<input type="text" class="form-control ad-name" placeholder="שם היחידה" value="{ads.name}">
 							</td>
@@ -50,29 +57,39 @@
 									<option value="bottom">באנר תחתון (לרוחב)</option>
 									<option value="sidebar-right">סרגל צד ימין (לאורך)</option>
 									<option value="sidebar-left">סרגל צד שמאל (לאורך)</option>
+									<option value="recent-feed">פיד נושאים אחרונים (/recent)</option>
 									<option value="custom">סלקטור מותאם אישית</option>
 								</select>
 								<div class="ad-selector-wrapper" style="display: none;">
 									<input type="text" class="form-control ad-selector form-control-sm" placeholder="סלקטור, למשל: #content" value="{ads.selector}">
 								</div>
+								<div class="ad-repeat-wrapper mt-1" style="display: none;">
+									<div class="input-group input-group-sm">
+										<span class="input-group-text">כל</span>
+										<input type="number" min="1" max="50" class="form-control ad-repeat-every" value="{ads.repeatEvery}">
+										<span class="input-group-text">נושאים</span>
+									</div>
+								</div>
 							</td>
 							<td>
-								<input type="text" class="form-control ad-image" placeholder="קישור לתמונה (JPG, PNG, GIF, WEBP)" value="{ads.image}">
-								<div class="mt-1 text-center">
+								<input type="text" class="form-control ad-image mb-1" placeholder="קישור לתמונה (JPG, PNG, GIF, WEBP)" value="{ads.image}">
+								<div class="text-center">
 									<img src="{ads.image}" class="ad-preview-img img-thumbnail" style="max-height: 40px; max-width: 120px; display: inline-block; margin: 0 auto;" alt="תצוגה מקדימה">
 								</div>
 							</td>
-
 							<td>
 								<input type="text" class="form-control ad-link" placeholder="https://example.com/target-page" value="{ads.link}">
 							</td>
 							<td>
+								<input type="date" class="form-control ad-end-date" value="{ads.endDate}" title="תאריך סיום מוצג">
+							</td>
+							<td>
 								<textarea class="form-control ad-html" rows="1" placeholder="קוד HTML חלופי">{ads.html}</textarea>
 							</td>
-							<td class="text-center">
+							<td class="text-center align-middle">
 								<span class="badge bg-info text-dark ad-clicks">{ads.clicks}</span>
 							</td>
-							<td class="text-center">
+							<td class="text-center align-middle">
 								<button type="button" class="btn btn-sm btn-danger btn-delete-ad" title="מחק">
 									<i class="fa fa-trash"></i>
 								</button>
@@ -80,6 +97,7 @@
 						</tr>
 						{{{end}}}
 					</tbody>
+
 
 
 				</table>
