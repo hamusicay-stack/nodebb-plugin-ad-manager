@@ -1,0 +1,27 @@
+{
+	"id": "nodebb-plugin-ad-manager",
+	"name": "NodeBB Ad Manager",
+	"description": "Ad management, injection, and click tracking plugin for NodeBB",
+	"version": "1.0.0",
+	"library": "./library.js",
+	"hooks": [
+		{
+			"hook": "static:app.load",
+			"method": "init"
+		},
+		{
+			"hook": "filter:admin.header",
+			"method": "addAdminNavigation"
+		}
+	],
+	"staticDirs": {
+		"static": "./static"
+	},
+	"acpScripts": [
+		"static/lib/admin.js"
+	],
+	"scripts": [
+		"static/lib/client.js"
+	],
+	"templates": "templates"
+}
