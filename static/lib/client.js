@@ -66,14 +66,39 @@ $(document).ready(function () {
 				.html(innerContent);
 
 			if (loc === 'top') {
-				// Top Banner: Positioned BELOW Hot Topics / Breadcrumbs
-				$target = $('[component="category/hot-topics"], .hot-topics, [component="breadcrumb"], .breadcrumb-container').first();
-				if ($target.length) {
+				// Top Banner: Positioned EXACTLY below the "הנושאים החמים" (Hot Topics) ticker bar
+				const $hotTopics = $(`
+					[component="widget/recent_topics"],
+					[component="widget/recent-topics"],
+					[data-widget="recent_topics"],
+					[data-widget="recent-topics"],
+					.recent-topics-widget,
+					.widget-recent-topics,
+					.hot-topics-widget,
+					[component="category/hot-topics"],
+					.hot-topics,
+					.hot-topics-container,
+					.recent-topics-teaser,
+					.recent-topics-bar,
+					[component="breadcrumb"],
+					ol.breadcrumb,
+					.breadcrumb-container
+				`).filter(':visible').last();
+
+				if ($hotTopics.length) {
+					$target = $hotTopics;
 					injectionMode = 'after';
 				} else {
-					$target = $('#content, [component="header"], main').first();
-					injectionMode = 'prepend';
+					// Fallback to category list container
+					$target = $('[component="category"], [component="categories"], .category, .categories, #category-list').first();
+					if ($target.length) {
+						injectionMode = 'before';
+					} else {
+						$target = $('#content, main').first();
+						injectionMode = 'prepend';
+					}
 				}
+
 				$container.css({
 					'display': 'block',
 					'width': '100%',
@@ -83,6 +108,7 @@ $(document).ready(function () {
 					'clear': 'both'
 				});
 			} else if (loc === 'bottom') {
+
 				// Bottom Banner: Positioned ABOVE Black Footer
 				$target = $('footer, [component="footer"], .footer, #footer').first();
 				if ($target.length) {
