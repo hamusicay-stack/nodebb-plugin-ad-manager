@@ -26,13 +26,14 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 		ACP.saveAds();
 	});
 
-	// Handle location change to toggle custom selector field visibility
-	$(document).off('change', '#ad-manager-acp .ad-location').on('change', '#ad-manager-acp .ad-location', function () {
-		const $row = $(this).closest('.ad-unit-row');
-		if ($(this).val() === 'custom') {
-			$row.find('.ad-selector-wrapper').show();
+	// Live preview of image (JPG, PNG, GIF, WEBP) in ACP table
+	$(document).off('input change', '#ad-manager-acp .ad-image').on('input change', '#ad-manager-acp .ad-image', function () {
+		const url = $(this).val().trim();
+		const $img = $(this).closest('td').find('.ad-preview-img');
+		if (url) {
+			$img.attr('src', url).show();
 		} else {
-			$row.find('.ad-selector-wrapper').hide();
+			$img.hide();
 		}
 	});
 
@@ -50,6 +51,7 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 
 		const loc = ad.location || 'top';
 		const showSelector = loc === 'custom' ? '' : 'display: none;';
+		const showPreview = ad.image ? 'block' : 'none';
 
 		const rowHtml = `
 			<tr class="ad-unit-row" data-id="${ad.id}">
@@ -69,7 +71,10 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 					</div>
 				</td>
 				<td>
-					<input type="text" class="form-control ad-image" placeholder="https://example.com/banner.png" value="${escapeAttr(ad.image)}">
+					<input type="text" class="form-control ad-image" placeholder="קישור לתמונה (JPG, PNG, GIF, WEBP)" value="${escapeAttr(ad.image)}">
+					<div class="mt-1 text-center">
+						<img src="${escapeAttr(ad.image)}" class="ad-preview-img img-thumbnail" style="max-height: 40px; max-width: 120px; display: ${showPreview}; margin: 0 auto;" alt="תצוגה מקדימה">
+					</div>
 				</td>
 				<td>
 					<input type="text" class="form-control ad-link" placeholder="https://example.com/target-page" value="${escapeAttr(ad.link)}">
@@ -90,6 +95,7 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 
 		$('#ad-units-tbody').append(rowHtml);
 	};
+
 
 	ACP.saveAds = function () {
 		const ads = [];

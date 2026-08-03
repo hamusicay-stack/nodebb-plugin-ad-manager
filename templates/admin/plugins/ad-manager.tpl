@@ -57,8 +57,12 @@
 								</div>
 							</td>
 							<td>
-								<input type="text" class="form-control ad-image" placeholder="https://example.com/banner.png" value="{ads.image}">
+								<input type="text" class="form-control ad-image" placeholder="קישור לתמונה (JPG, PNG, GIF, WEBP)" value="{ads.image}">
+								<div class="mt-1 text-center">
+									<img src="{ads.image}" class="ad-preview-img img-thumbnail" style="max-height: 40px; max-width: 120px; display: inline-block; margin: 0 auto;" alt="תצוגה מקדימה">
+								</div>
 							</td>
+
 							<td>
 								<input type="text" class="form-control ad-link" placeholder="https://example.com/target-page" value="{ads.link}">
 							</td>
