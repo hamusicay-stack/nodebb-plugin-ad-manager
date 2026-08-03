@@ -6,42 +6,25 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 	const ACP = {};
 
 	ACP.init = function () {
-		const $root = $('#ad-manager-acp');
-
-		if (!$root.length) {
-			return;
-		}
-
-		// Ensure we don't bind duplicate listeners across Ajaxify transitions
-		$root.off('click');
-
-		// Event Delegation directly on the root ACP element for maximum stability across Ajaxify navigations
-		$root.on('click', function (e) {
-			const $target = $(e.target);
-
-			// Handle "Add Ad Unit" button
-			if ($target.closest('.btn-add-ad').length) {
-				e.preventDefault();
-				ACP.addAdRow();
-				return;
-			}
-
-			// Handle "Delete Ad Unit" button
-			if ($target.closest('.btn-delete-ad').length) {
-				e.preventDefault();
-				const $row = $target.closest('.ad-unit-row');
-				$row.remove();
-				return;
-			}
-
-			// Handle "Save All Changes" button
-			if ($target.closest('#btn-save-ads').length) {
-				e.preventDefault();
-				ACP.saveAds();
-				return;
-			}
-		});
+		// Module initialization if needed
 	};
+
+	// Global event delegation on document for #ad-manager-acp elements
+	// Ensures buttons always work reliably across all Ajaxify navigations
+	$(document).off('click', '#ad-manager-acp .btn-add-ad').on('click', '#ad-manager-acp .btn-add-ad', function (e) {
+		e.preventDefault();
+		ACP.addAdRow();
+	});
+
+	$(document).off('click', '#ad-manager-acp .btn-delete-ad').on('click', '#ad-manager-acp .btn-delete-ad', function (e) {
+		e.preventDefault();
+		$(this).closest('.ad-unit-row').remove();
+	});
+
+	$(document).off('click', '#ad-manager-acp #btn-save-ads').on('click', '#ad-manager-acp #btn-save-ads', function (e) {
+		e.preventDefault();
+		ACP.saveAds();
+	});
 
 	ACP.addAdRow = function (data) {
 		const ad = data || {
@@ -55,19 +38,19 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 		const rowHtml = `
 			<tr class="ad-unit-row" data-id="${ad.id}">
 				<td>
-					<input type="text" class="form-control ad-name" placeholder="e.g. Header Banner" value="${escapeAttr(ad.name)}">
+					<input type="text" class="form-control ad-name" placeholder="למשל: Header Banner" value="${escapeAttr(ad.name)}">
 				</td>
 				<td>
-					<input type="text" class="form-control ad-selector" placeholder="e.g. #content or .topic" value="${escapeAttr(ad.selector)}">
+					<input type="text" class="form-control ad-selector" placeholder="למשל: #content" value="${escapeAttr(ad.selector)}">
 				</td>
 				<td>
-					<textarea class="form-control ad-html" rows="2" placeholder="<div class='my-ad'>Ad Code</div>">${escapeHtml(ad.html)}</textarea>
+					<textarea class="form-control ad-html" rows="2" placeholder="<div class='my-ad'>קוד פרסומת</div>">${escapeHtml(ad.html)}</textarea>
 				</td>
 				<td class="text-center align-middle">
 					<span class="badge bg-info text-dark ad-clicks">${ad.clicks || 0}</span>
 				</td>
 				<td class="text-center align-middle">
-					<button type="button" class="btn btn-sm btn-danger btn-delete-ad" title="Delete">
+					<button type="button" class="btn btn-sm btn-danger btn-delete-ad" title="מחק">
 						<i class="fa fa-trash"></i>
 					</button>
 				</td>
@@ -101,13 +84,13 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 			},
 			success: function (res) {
 				if (res && res.success) {
-					alerts.success('Ad Manager settings saved successfully!');
+					alerts.success('הגדרות Ad Manager נשמרו בהצלחה!');
 				} else {
-					alerts.error('Failed to save settings.');
+					alerts.error('שגיאה בשמירת ההגדרות.');
 				}
 			},
 			error: function (err) {
-				alerts.error('Error saving settings: ' + (err.responseJSON ? err.responseJSON.error : err.statusText));
+				alerts.error('שגיאה בשמירה: ' + (err.responseJSON ? err.responseJSON.error : err.statusText));
 			}
 		});
 	};
@@ -122,3 +105,4 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 
 	return ACP;
 });
+
