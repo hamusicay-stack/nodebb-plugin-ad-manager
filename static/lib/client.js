@@ -224,55 +224,93 @@ $(document).ready(function () {
 
 
 	function injectRecentFeedAds(ad) {
-		const $topics = $('[component="category/topic"], ul.topic-list > li.category-item, [component="topic/teaser"]');
-		if (!$topics.length) {
-			return;
-		}
+		const $topics = $('[component="category/topic"], [data-tid], .category-item, ul.topic-list > li, .topics-list > div, .topic-row, [component="topic/teaser"]');
+		const interval = Math.max(1, parseInt(ad.repeatEvery, 10) || 3);
 
-		const interval = Math.max(1, parseInt(ad.repeatEvery, 10) || 5);
+		if ($topics.length > 0) {
+			$topics.each(function (index) {
+				const isIntervalMatch = (index + 1) % interval === 0;
+				const isLastFallback = ($topics.length < interval) && (index === $topics.length - 1);
 
-		$topics.each(function (index) {
-			// Check if index matches interval (e.g. after topic 5, 10, 15...)
-			if ((index + 1) % interval === 0) {
-				const containerId = 'ad-recent-feed-' + ad.id + '-idx-' + index;
-				if ($('#' + containerId).length) {
-					return; // Already injected here
+				if (isIntervalMatch || isLastFallback) {
+					const containerId = 'ad-recent-feed-' + ad.id + '-idx-' + index;
+					if ($('#' + containerId).length) {
+						return;
+					}
+
+					let innerContent = ad.html;
+					if (!innerContent && ad.image && ad.link) {
+						innerContent = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%; text-decoration:none;">
+							<img src="${ad.image}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:160px; object-fit:contain; border-radius:8px; display:block; margin:0 auto;">
+						</a>`;
+					}
+
+					const $adCard = $('<div></div>')
+						.attr('id', containerId)
+						.attr('data-ad-id', ad.id)
+						.addClass('nodebb-ad-manager-unit nodebb-ad-recent-card')
+						.css({
+							'display': 'block',
+							'width': '100%',
+							'margin': '12px 0',
+							'padding': '16px 20px',
+							'background': 'var(--bs-card-bg, #ffffff)',
+							'border': '1px solid var(--bs-card-border-color, rgba(0,0,0,0.12))',
+							'border-radius': '12px',
+							'box-shadow': '0 2px 8px rgba(0,0,0,0.05)',
+							'box-sizing': 'border-box',
+							'text-align': 'center',
+							'clear': 'both'
+						})
+						.html(innerContent);
+
+					$(this).after($adCard);
+
+					$adCard.off('click').on('click', function () {
+						trackAdClick(ad.id);
+					});
 				}
-
-				let innerContent = ad.html;
-				if (!innerContent && ad.image && ad.link) {
-					innerContent = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%;">
-						<img src="${ad.image}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:160px; object-fit:contain; border-radius:6px; display:block; margin:0 auto;">
-					</a>`;
-				}
-
-				const $adCard = $('<div></div>')
-					.attr('id', containerId)
-					.attr('data-ad-id', ad.id)
-					.addClass('nodebb-ad-manager-unit nodebb-ad-recent-card')
-					.css({
-						'display': 'block',
-						'width': '100%',
-						'margin': '12px 0',
-						'padding': '14px 20px',
-						'background': 'var(--bs-card-bg, #ffffff)',
-						'border': '1px solid var(--bs-card-border-color, rgba(0,0,0,0.12))',
-						'border-radius': '10px',
-						'box-shadow': '0 2px 8px rgba(0,0,0,0.05)',
-						'box-sizing': 'border-box',
-						'text-align': 'center',
-						'clear': 'both'
-					})
-					.html(innerContent);
-
-				$(this).after($adCard);
-
-				$adCard.off('click').on('click', function () {
-					trackAdClick(ad.id);
-				});
+			});
+		} else if (window.location.pathname.indexOf('/recent') !== -1 || $('[component="category"]').length) {
+			const containerId = 'ad-recent-feed-fallback-' + ad.id;
+			if ($('#' + containerId).length) {
+				return;
 			}
-		});
+
+			let innerContent = ad.html;
+			if (!innerContent && ad.image && ad.link) {
+				innerContent = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%; text-decoration:none;">
+					<img src="${ad.image}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:160px; object-fit:contain; border-radius:8px; display:block; margin:0 auto;">
+				</a>`;
+			}
+
+			const $adCard = $('<div></div>')
+				.attr('id', containerId)
+				.attr('data-ad-id', ad.id)
+				.addClass('nodebb-ad-manager-unit nodebb-ad-recent-card')
+				.css({
+					'display': 'block',
+					'width': '100%',
+					'margin': '15px 0',
+					'padding': '16px 20px',
+					'background': 'var(--bs-card-bg, #ffffff)',
+					'border': '1px solid var(--bs-card-border-color, rgba(0,0,0,0.12))',
+					'border-radius': '12px',
+					'box-shadow': '0 2px 8px rgba(0,0,0,0.05)',
+					'box-sizing': 'border-box',
+					'text-align': 'center',
+					'clear': 'both'
+				})
+				.html(innerContent);
+
+			$('[component="category"], #content, main').first().prepend($adCard);
+
+			$adCard.off('click').on('click', function () {
+				trackAdClick(ad.id);
+			});
+		}
 	}
+
 
 
 
