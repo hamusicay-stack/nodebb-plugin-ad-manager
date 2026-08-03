@@ -66,12 +66,14 @@ $(document).ready(function () {
 				.html(innerContent);
 
 			if (loc === 'top') {
-				// Top Banner: Positioned EXACTLY below the "הנושאים החמים" (Hot Topics) ticker bar
-				const $hotTopics = $(`
+				// Top Banner: Must be BELOW the Logo AND BELOW the "הנושאים החמים" (Hot Topics) bar
+				const $hotTopicsWidget = $(`
 					[component="widget/recent_topics"],
 					[component="widget/recent-topics"],
 					[data-widget="recent_topics"],
 					[data-widget="recent-topics"],
+					[data-widget-name*="recent"],
+					[data-widget-name*="hot"],
 					.recent-topics-widget,
 					.widget-recent-topics,
 					.hot-topics-widget,
@@ -85,24 +87,27 @@ $(document).ready(function () {
 					.breadcrumb-container
 				`).filter(':visible').last();
 
-				if ($hotTopics.length) {
-					$target = $hotTopics;
+				const $categoriesList = $('[component="categories"], #category-list, .categories, [component="category"]').filter(':visible').first();
+
+				if ($hotTopicsWidget.length) {
+					$target = $hotTopicsWidget;
 					injectionMode = 'after';
+				} else if ($categoriesList.length) {
+					$target = $categoriesList;
+					injectionMode = 'before';
 				} else {
-					$target = $('[component="category"], [component="categories"], .category, .categories, #category-list').first();
-					if ($target.length) {
-						injectionMode = 'before';
-					} else {
+					$target = $('#content > div').eq(1);
+					if (!$target.length) {
 						$target = $('#content, main').first();
-						injectionMode = 'prepend';
 					}
+					injectionMode = 'prepend';
 				}
 
 				$container.css({
 					'display': 'block',
 					'width': '100%',
 					'max-width': '1100px',
-					'margin': '15px auto',
+					'margin': '15px auto 25px auto',
 					'text-align': 'center',
 					'clear': 'both'
 				});
