@@ -34,61 +34,114 @@ $(document).ready(function () {
 				return;
 			}
 
-			let $target;
-			let injectionMode = 'prepend'; // 'prepend' or 'append'
-			let customCss = {
-				'display': 'block',
-				'position': 'static',
-				'margin': '15px 0',
-				'clear': 'both',
-				'width': '100%',
-				'box-sizing': 'border-box',
-				'text-align': 'center'
-			};
-
 			const loc = ad.location || 'top';
+			let $target;
+			let injectionMode = 'prepend';
+
+			// Proportional image rendering
+			let innerContent = ad.html;
+			if (!innerContent && ad.image && ad.link) {
+				const maxH = (loc === 'top' || loc === 'bottom') ? '180px' : '460px';
+				innerContent = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%; text-decoration:none;">
+					<img src="${ad.image}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:${maxH}; object-fit:contain; border-radius:8px; display:block; margin:0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.12);">
+				</a>`;
+			}
+
+			const $container = $('<div></div>')
+				.attr('id', adContainerId)
+				.attr('data-ad-id', ad.id)
+				.addClass('nodebb-ad-manager-unit nodebb-ad-location-' + loc)
+				.html(innerContent);
+
+			const isDesktop = $(window).width() >= 1200;
 
 			if (loc === 'top') {
 				$target = $('#content, [component="header"], main').first();
 				injectionMode = 'prepend';
+				$container.css({
+					'display': 'block',
+					'width': '100%',
+					'max-width': '1000px',
+					'margin': '15px auto',
+					'text-align': 'center',
+					'clear': 'both'
+				});
 			} else if (loc === 'bottom') {
 				$target = $('#content, main').first();
 				injectionMode = 'append';
+				$container.css({
+					'display': 'block',
+					'width': '100%',
+					'max-width': '1000px',
+					'margin': '20px auto 15px auto',
+					'text-align': 'center',
+					'clear': 'both'
+				});
 			} else if (loc === 'sidebar-right') {
-				$target = $('[component="sidebar"], .sidebar-right, .sidebar').first();
-				if ($target.length) {
-					injectionMode = 'prepend';
-					customCss['width'] = '100%';
+				$target = $('body');
+				injectionMode = 'append';
+				if (isDesktop) {
+					// Positioned on the right side, offset 75px from the edge to NOT cover the fixed right icon toolbar
+					$container.css({
+						'position': 'fixed',
+						'top': '110px',
+						'right': '75px',
+						'left': 'auto',
+						'width': '160px',
+						'max-height': '480px',
+						'z-index': '80',
+						'box-sizing': 'border-box',
+						'text-align': 'center'
+					});
 				} else {
 					$target = $('#content, main').first();
 					injectionMode = 'prepend';
-					customCss['float'] = 'right';
-					customCss['width'] = 'auto';
-					customCss['max-width'] = '300px';
-					customCss['margin-left'] = '15px';
-					customCss['clear'] = 'none';
+					$container.css({
+						'display': 'block',
+						'width': '100%',
+						'max-width': '300px',
+						'margin': '15px auto',
+						'text-align': 'center'
+					});
 				}
 			} else if (loc === 'sidebar-left') {
-				$target = $('[component="sidebar"], .sidebar-left, .sidebar').first();
-				if ($target.length) {
-					injectionMode = 'prepend';
-					customCss['width'] = '100%';
+				$target = $('body');
+				injectionMode = 'append';
+				if (isDesktop) {
+					// Positioned on the left side, offset 75px from the edge to NOT cover the fixed left icon toolbar
+					$container.css({
+						'position': 'fixed',
+						'top': '110px',
+						'left': '75px',
+						'right': 'auto',
+						'width': '160px',
+						'max-height': '480px',
+						'z-index': '80',
+						'box-sizing': 'border-box',
+						'text-align': 'center'
+					});
 				} else {
 					$target = $('#content, main').first();
 					injectionMode = 'prepend';
-					customCss['float'] = 'left';
-					customCss['width'] = 'auto';
-					customCss['max-width'] = '300px';
-					customCss['margin-right'] = '15px';
-					customCss['clear'] = 'none';
+					$container.css({
+						'display': 'block',
+						'width': '100%',
+						'max-width': '300px',
+						'margin': '15px auto',
+						'text-align': 'center'
+					});
 				}
 			} else if (loc === 'custom' && ad.selector) {
 				$target = $(ad.selector);
 				injectionMode = 'prepend';
+				$container.css({
+					'display': 'block',
+					'margin': '15px auto',
+					'text-align': 'center'
+				});
 			}
 
 			if (!$target || !$target.length) {
-				// Fallback to #content
 				$target = $('#content');
 				injectionMode = 'prepend';
 			}
@@ -97,21 +150,13 @@ $(document).ready(function () {
 				return;
 			}
 
-			// Create static, non-floating container
-			const $container = $('<div></div>')
-				.attr('id', adContainerId)
-				.attr('data-ad-id', ad.id)
-				.addClass('nodebb-ad-manager-unit')
-				.css(customCss)
-				.html(ad.html);
-
 			if (injectionMode === 'append') {
 				$target.append($container);
 			} else {
 				$target.prepend($container);
 			}
 
-			// Attach click tracking listener
+			// Attach click tracking
 			$container.off('click').on('click', function () {
 				trackAdClick(ad.id);
 			});
