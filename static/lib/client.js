@@ -9,7 +9,7 @@ $(document).ready(function () {
 	});
 
 	$(window).on('resize scroll', function () {
-		repositionSideBanners();
+		adjustSideBannerLayout();
 	});
 
 	function initAdManager() {
@@ -20,7 +20,7 @@ $(document).ready(function () {
 			.then(function (data) {
 				if (data && data.success && Array.isArray(data.ads)) {
 					injectAds(data.ads);
-					setTimeout(repositionSideBanners, 200);
+					setTimeout(adjustSideBannerLayout, 150);
 				}
 			})
 			.catch(function (err) {
@@ -53,7 +53,7 @@ $(document).ready(function () {
 			// Proportional image rendering
 			let innerContent = ad.html;
 			if (!innerContent && ad.image && ad.link) {
-				const maxH = (loc === 'top' || loc === 'bottom') ? '180px' : '460px';
+				const maxH = (loc === 'top' || loc === 'bottom') ? '180px' : '450px';
 				innerContent = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%; text-decoration:none;">
 					<img src="${ad.image}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:${maxH}; object-fit:contain; border-radius:8px; display:block; margin:0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.12);">
 				</a>`;
@@ -89,7 +89,6 @@ $(document).ready(function () {
 					$target = $hotTopics;
 					injectionMode = 'after';
 				} else {
-					// Fallback to category list container
 					$target = $('[component="category"], [component="categories"], .category, .categories, #category-list').first();
 					if ($target.length) {
 						injectionMode = 'before';
@@ -108,7 +107,6 @@ $(document).ready(function () {
 					'clear': 'both'
 				});
 			} else if (loc === 'bottom') {
-
 				// Bottom Banner: Positioned ABOVE Black Footer
 				$target = $('footer, [component="footer"], .footer, #footer').first();
 				if ($target.length) {
@@ -163,67 +161,66 @@ $(document).ready(function () {
 			});
 		});
 
-		repositionSideBanners();
+		adjustSideBannerLayout();
 	}
 
-	function repositionSideBanners() {
+	function adjustSideBannerLayout() {
+		const isDesktop = $(window).width() >= 992;
+		const $hasRightAd = $('.nodebb-ad-location-sidebar-right');
+		const $hasLeftAd = $('.nodebb-ad-location-sidebar-left');
 		const $mainContent = $('#content, [component="brand/wrapper"], main').first();
-		if (!$mainContent.length) {
-			return;
+
+		if (isDesktop) {
+			// Position Right Side Banner next to right vertical navbar (70px from edge)
+			$hasRightAd.css({
+				'position': 'fixed',
+				'top': '120px',
+				'right': '70px',
+				'left': 'auto',
+				'width': '150px',
+				'max-height': '450px',
+				'z-index': '80',
+				'display': 'block',
+				'box-sizing': 'border-box',
+				'text-align': 'center'
+			});
+
+			// Position Left Side Banner next to left vertical navbar (70px from edge)
+			$hasLeftAd.css({
+				'position': 'fixed',
+				'top': '120px',
+				'left': '70px',
+				'right': 'auto',
+				'width': '150px',
+				'max-height': '450px',
+				'z-index': '80',
+				'display': 'block',
+				'box-sizing': 'border-box',
+				'text-align': 'center'
+			});
+
+			// Shift central forum content inward so ads NEVER overlap any forum text/topics
+			if ($mainContent.length) {
+				$mainContent.css({
+					'padding-right': $hasRightAd.length ? '175px' : '',
+					'padding-left': $hasLeftAd.length ? '175px' : '',
+					'transition': 'padding 0.2s ease'
+				});
+			}
+		} else {
+			// Mobile/Tablet fallback: Hide side banners on mobile to avoid cluttering small screens
+			$hasRightAd.css({ 'display': 'none' });
+			$hasLeftAd.css({ 'display': 'none' });
+
+			if ($mainContent.length) {
+				$mainContent.css({
+					'padding-right': '',
+					'padding-left': ''
+				});
+			}
 		}
-
-		const rect = $mainContent[0].getBoundingClientRect();
-		const windowWidth = $(window).width();
-		const bannerWidth = 160;
-
-		$('.nodebb-ad-location-sidebar-right').each(function () {
-			const spaceOnRight = windowWidth - rect.right;
-			// If there's enough space outside main content box (excluding fixed icon bar)
-			if (spaceOnRight >= (bannerWidth + 70)) {
-				$(this).css({
-					'position': 'fixed',
-					'top': '140px',
-					'left': (rect.right + 10) + 'px',
-					'right': 'auto',
-					'width': bannerWidth + 'px',
-					'display': 'block',
-					'z-index': '80'
-				});
-			} else {
-				// Prevent covering content: collapse side banner cleanly if window is too narrow
-				$(this).css({
-					'position': 'static',
-					'display': 'block',
-					'width': '100%',
-					'max-width': '300px',
-					'margin': '15px auto'
-				});
-			}
-		});
-
-		$('.nodebb-ad-location-sidebar-left').each(function () {
-			const spaceOnLeft = rect.left;
-			if (spaceOnLeft >= (bannerWidth + 70)) {
-				$(this).css({
-					'position': 'fixed',
-					'top': '140px',
-					'left': (rect.left - bannerWidth - 10) + 'px',
-					'right': 'auto',
-					'width': bannerWidth + 'px',
-					'display': 'block',
-					'z-index': '80'
-				});
-			} else {
-				$(this).css({
-					'position': 'static',
-					'display': 'block',
-					'width': '100%',
-					'max-width': '300px',
-					'margin': '15px auto'
-				});
-			}
-		});
 	}
+
 
 
 	function injectRecentFeedAds(ad) {
