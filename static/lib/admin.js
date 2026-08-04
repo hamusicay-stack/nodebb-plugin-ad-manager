@@ -6,8 +6,30 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 	const ACP = {};
 
 	ACP.init = function () {
-		// Module initialization if needed
+		// Fetch saved ads from API to guarantee exact select dropdown states
+		$.getJSON(config.relative_path + '/api/admin/plugins/ad-manager/ads', function (response) {
+			$('#ad-units-tbody').empty();
+			const ads = (response && response.ads) || [];
+			if (ads.length) {
+				ads.forEach(function (ad) {
+					ACP.addAdRow(ad);
+				});
+			} else {
+				ACP.addAdRow();
+			}
+		}).fail(function () {
+			$('#ad-units-tbody').empty();
+			const ads = (typeof ajaxify !== 'undefined' && ajaxify.data && ajaxify.data.ads) || [];
+			if (ads.length) {
+				ads.forEach(function (ad) {
+					ACP.addAdRow(ad);
+				});
+			} else {
+				ACP.addAdRow();
+			}
+		});
 	};
+
 
 	// Global event delegation on document for #ad-manager-acp elements
 	// Ensures buttons always work reliably across all Ajaxify navigations
