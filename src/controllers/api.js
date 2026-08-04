@@ -73,12 +73,14 @@ apiController.getAds = async function (req, res, next) {
 					pageTarget: ad.pageTarget || 'all',
 					pagePath: ad.pagePath || '',
 					deviceTarget: ad.deviceTarget || 'all',
+					rotateInterval: parseInt(ad.rotateInterval, 10) || 9,
 					repeatEvery: parseInt(ad.repeatEvery, 10) || 5,
 					selector: ad.selector,
 					image: directImageUrl,
 					link: ad.link,
 					html: effectiveHtml
 				};
+
 
 
 			});

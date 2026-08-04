@@ -128,9 +128,15 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 						<option value="desktop" ${deviceTarget === 'desktop' ? 'selected' : ''}>💻 מחשב בלבד</option>
 						<option value="mobile" ${deviceTarget === 'mobile' ? 'selected' : ''}>📱 מובייל בלבד</option>
 					</select>
+					<div class="input-group input-group-sm mt-1" title="זמן רוטציה בשניות אם יש כמה מודעות באותו מיקום">
+						<span class="input-group-text">🔄</span>
+						<input type="number" min="2" max="120" class="form-control ad-rotate-interval" value="${ad.rotateInterval || 9}">
+						<span class="input-group-text">שניות</span>
+					</div>
 				</td>
 				<td>
 					<select class="form-select form-select-sm ad-location mb-1">
+
 						<option value="top" ${loc === 'top' ? 'selected' : ''}>באנר עליון (לרוחב)</option>
 						<option value="bottom" ${loc === 'bottom' ? 'selected' : ''}>באנר תחתון (לרוחב)</option>
 						<option value="sidebar-right" ${loc === 'sidebar-right' ? 'selected' : ''}>סרגל צד ימין (לאורך)</option>
@@ -191,7 +197,9 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 				pageTarget: $row.find('.ad-page-target').val(),
 				pagePath: $row.find('.ad-page-path').val().trim(),
 				deviceTarget: $row.find('.ad-device-target').val(),
+				rotateInterval: parseInt($row.find('.ad-rotate-interval').val(), 10) || 9,
 				repeatEvery: parseInt($row.find('.ad-repeat-every').val(), 10) || 5,
+
 				selector: $row.find('.ad-selector').val().trim(),
 				image: $row.find('.ad-image').val().trim(),
 				link: $row.find('.ad-link').val().trim(),

@@ -89,153 +89,369 @@ $(document).ready(function () {
 	}
 
 	function injectAds(ads) {
-		ads.forEach(function (ad) {
-			if (!shouldShowAdOnCurrentPage(ad) || !shouldShowAdOnCurrentDevice(ad)) {
+		const validAds = ads.filter(function (ad) {
+			return (ad.html || (ad.image && ad.link)) &&
+				shouldShowAdOnCurrentPage(ad) &&
+				shouldShowAdOnCurrentDevice(ad);
+		});
+
+		if (!validAds.length) {
+			return;
+		}
+
+		// Separate in-feed ads from fixed location ads
+		const recentFeedAds = validAds.filter(function (ad) { return ad.location === 'recent-feed'; });
+		const locationAds = validAds.filter(function (ad) { return ad.location !== 'recent-feed'; });
+
+		// Handle in-feed ads
+		recentFeedAds.forEach(function (ad) {
+			injectRecentFeedAds(ad);
+		});
+
+		// Group fixed location ads by their target location key
+		const groups = {};
+		locationAds.forEach(function (ad) {
+			const key = ad.location === 'custom' ? ('custom:' + ad.selector) : ad.location;
+			if (!groups[key]) {
+				groups[key] = [];
+			}
+			groups[key].push(ad);
+		});
+
+		// Inject each group (Single or Rotating Carousel)
+		Object.keys(groups).forEach(function (key) {
+			const groupAds = groups[key];
+			if (!groupAds.length) return;
+
+			const loc = groupAds[0].location || 'top';
+			const groupContainerId = 'ad-group-unit-' + key.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+			if ($('#' + groupContainerId).length) {
 				return;
 			}
 
-			if (!ad.html && !(ad.image && ad.link)) {
-				return;
+			if (groupAds.length === 1) {
+				injectSingleAd(groupAds[0], groupContainerId, loc);
+			} else {
+				injectCarouselAds(groupAds, groupContainerId, loc);
 			}
+		});
 
+		// Adjust side banner padding layout
+		adjustSideBannerLayout();
+	}
 
+	function injectSingleAd(ad, adContainerId, loc) {
+		let $target;
+		let injectionMode = 'prepend';
 
-			const loc = ad.location || 'top';
+		const imageUrl = formatGoogleDriveUrl(ad.image);
 
-			// Handle In-Feed Recent Topics Injection
-			if (loc === 'recent-feed') {
-				injectRecentFeedAds(ad);
-				return;
-			}
+		// Proportional image rendering
+		let innerContent = ad.html;
+		if (!innerContent && imageUrl && ad.link) {
+			const maxH = (loc === 'top' || loc === 'bottom') ? '180px' : '450px';
+			innerContent = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%; text-decoration:none;">
+				<img src="${imageUrl}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:${maxH}; object-fit:contain; border-radius:8px; display:block; margin:0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.12);">
+			</a>`;
+		}
 
-			const adContainerId = 'ad-unit-container-' + ad.id;
-			if ($('#' + adContainerId).length) {
-				return;
-			}
+		const $container = $('<div></div>')
+			.attr('id', adContainerId)
+			.attr('data-ad-id', ad.id)
+			.addClass('nodebb-ad-manager-unit')
+			.html(innerContent);
 
-			let $target;
-			let injectionMode = 'prepend';
+		if (loc === 'top') {
+			const $hotTopicsWidget = $(`
+				[component="widget/recent_topics"],
+				[component="widget/recent-topics"],
+				[data-widget="recent_topics"],
+				[data-widget="recent-topics"],
+				[data-widget-name*="recent"],
+				[data-widget-name*="hot"],
+				.recent-topics-widget,
+				.widget-recent-topics,
+				.hot-topics-widget,
+				[component="category/hot-topics"],
+				.hot-topics,
+				.hot-topics-container,
+				.recent-topics-teaser,
+				.recent-topics-bar,
+				[component="breadcrumb"],
+				ol.breadcrumb,
+				.breadcrumb-container
+			`).filter(':visible').last();
 
-			const imageUrl = formatGoogleDriveUrl(ad.image);
+			const $categoriesList = $('[component="categories"], #category-list, .categories, [component="category"]').filter(':visible').first();
 
-			// Proportional image rendering
-			let innerContent = ad.html;
-			if (!innerContent && imageUrl && ad.link) {
-				const maxH = (loc === 'top' || loc === 'bottom') ? '180px' : '450px';
-				innerContent = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%; text-decoration:none;">
-					<img src="${imageUrl}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:${maxH}; object-fit:contain; border-radius:8px; display:block; margin:0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.12);">
-				</a>`;
-			}
-
-
-			const $container = $('<div></div>')
-				.attr('id', adContainerId)
-				.attr('data-ad-id', ad.id)
-				.addClass('nodebb-ad-manager-unit nodebb-ad-location-' + loc)
-				.html(innerContent);
-
-			if (loc === 'top') {
-				// Top Banner: Must be BELOW the Logo AND BELOW the "הנושאים החמים" (Hot Topics) bar
-				const $hotTopicsWidget = $(`
-					[component="widget/recent_topics"],
-					[component="widget/recent-topics"],
-					[data-widget="recent_topics"],
-					[data-widget="recent-topics"],
-					[data-widget-name*="recent"],
-					[data-widget-name*="hot"],
-					.recent-topics-widget,
-					.widget-recent-topics,
-					.hot-topics-widget,
-					[component="category/hot-topics"],
-					.hot-topics,
-					.hot-topics-container,
-					.recent-topics-teaser,
-					.recent-topics-bar,
-					[component="breadcrumb"],
-					ol.breadcrumb,
-					.breadcrumb-container
-				`).filter(':visible').last();
-
-				const $categoriesList = $('[component="categories"], #category-list, .categories, [component="category"]').filter(':visible').first();
-
-				if ($hotTopicsWidget.length) {
-					$target = $hotTopicsWidget;
-					injectionMode = 'after';
-				} else if ($categoriesList.length) {
-					$target = $categoriesList;
-					injectionMode = 'before';
-				} else {
-					$target = $('#content > div').eq(1);
-					if (!$target.length) {
-						$target = $('#content, main').first();
-					}
-					injectionMode = 'prepend';
-				}
-
-				$container.css({
-					'display': 'block',
-					'width': '100%',
-					'max-width': '1100px',
-					'margin': '15px auto 25px auto',
-					'text-align': 'center',
-					'clear': 'both'
-				});
-			} else if (loc === 'bottom') {
-				// Bottom Banner: Positioned ABOVE Black Footer
-				$target = $('footer, [component="footer"], .footer, #footer').first();
-				if ($target.length) {
-					injectionMode = 'before';
-				} else {
+			if ($hotTopicsWidget.length) {
+				$target = $hotTopicsWidget;
+				injectionMode = 'after';
+			} else if ($categoriesList.length) {
+				$target = $categoriesList;
+				injectionMode = 'before';
+			} else {
+				$target = $('#content > div').eq(1);
+				if (!$target.length) {
 					$target = $('#content, main').first();
-					injectionMode = 'append';
 				}
-				$container.css({
-					'display': 'block',
-					'width': '100%',
-					'max-width': '1100px',
-					'margin': '20px auto 15px auto',
-					'text-align': 'center',
-					'clear': 'both'
-				});
-			} else if (loc === 'sidebar-right' || loc === 'sidebar-left') {
-				$target = $('body');
+				injectionMode = 'prepend';
+			}
+
+			$container.css({
+				'display': 'block',
+				'width': '100%',
+				'max-width': '1100px',
+				'margin': '15px auto 25px auto',
+				'text-align': 'center',
+				'clear': 'both'
+			});
+		} else if (loc === 'bottom') {
+			const $footer = $('footer, [component="footer"], .footer-container, #footer').filter(':visible').first();
+			if ($footer.length) {
+				$target = $footer;
+				injectionMode = 'before';
+			} else {
+				$target = $('#content, main').first();
 				injectionMode = 'append';
-			} else if (loc === 'custom' && ad.selector) {
-				$target = $(ad.selector);
-				injectionMode = 'prepend';
-				$container.css({
-					'display': 'block',
-					'margin': '15px auto',
-					'text-align': 'center'
-				});
 			}
 
-			if (!$target || !$target.length) {
-				$target = $('#content');
-				injectionMode = 'prepend';
-			}
-
+			$container.css({
+				'display': 'block',
+				'width': '100%',
+				'max-width': '1100px',
+				'margin': '25px auto 15px auto',
+				'text-align': 'center',
+				'clear': 'both'
+			});
+		} else if (loc === 'sidebar-right') {
+			$target = $('body');
+			injectionMode = 'append';
+			$container.addClass('nodebb-ad-sidebar-right').css({
+				'position': 'fixed',
+				'top': '100px',
+				'right': '70px',
+				'width': '150px',
+				'z-index': '999',
+				'text-align': 'center'
+			});
+		} else if (loc === 'sidebar-left') {
+			$target = $('body');
+			injectionMode = 'append';
+			$container.addClass('nodebb-ad-sidebar-left').css({
+				'position': 'fixed',
+				'top': '100px',
+				'left': '70px',
+				'width': '150px',
+				'z-index': '999',
+				'text-align': 'center'
+			});
+		} else if (loc === 'custom') {
+			$target = $(ad.selector).first();
 			if (!$target.length) {
 				return;
 			}
-
-			if (injectionMode === 'after') {
-				$target.after($container);
-			} else if (injectionMode === 'before') {
-				$target.before($container);
-			} else if (injectionMode === 'append') {
-				$target.append($container);
-			} else {
-				$target.prepend($container);
-			}
-
-			// Attach click tracking
-			$container.off('click').on('click', function () {
-				trackAdClick(ad.id);
+			injectionMode = 'prepend';
+			$container.css({
+				'display': 'block',
+				'margin': '10px 0',
+				'clear': 'both'
 			});
+		}
+
+		if (!$target || !$target.length) {
+			return;
+		}
+
+		if (injectionMode === 'after') {
+			$target.after($container);
+		} else if (injectionMode === 'before') {
+			$target.before($container);
+		} else if (injectionMode === 'append') {
+			$target.append($container);
+		} else {
+			$target.prepend($container);
+		}
+
+		$container.off('click').on('click', function () {
+			trackAdClick(ad.id);
+		});
+	}
+
+	function injectCarouselAds(groupAds, containerId, loc) {
+		let $target;
+		let injectionMode = 'prepend';
+
+		if (loc === 'top') {
+			const $hotTopicsWidget = $(`
+				[component="widget/recent_topics"],
+				[component="widget/recent-topics"],
+				[data-widget="recent_topics"],
+				[data-widget="recent-topics"],
+				[data-widget-name*="recent"],
+				[data-widget-name*="hot"],
+				.recent-topics-widget,
+				.widget-recent-topics,
+				.hot-topics-widget,
+				[component="category/hot-topics"],
+				.hot-topics,
+				.hot-topics-container,
+				.recent-topics-teaser,
+				.recent-topics-bar,
+				[component="breadcrumb"],
+				ol.breadcrumb,
+				.breadcrumb-container
+			`).filter(':visible').last();
+
+			const $categoriesList = $('[component="categories"], #category-list, .categories, [component="category"]').filter(':visible').first();
+
+			if ($hotTopicsWidget.length) {
+				$target = $hotTopicsWidget;
+				injectionMode = 'after';
+			} else if ($categoriesList.length) {
+				$target = $categoriesList;
+				injectionMode = 'before';
+			} else {
+				$target = $('#content > div').eq(1);
+				if (!$target.length) {
+					$target = $('#content, main').first();
+				}
+				injectionMode = 'prepend';
+			}
+		} else if (loc === 'bottom') {
+			const $footer = $('footer, [component="footer"], .footer-container, #footer').filter(':visible').first();
+			if ($footer.length) {
+				$target = $footer;
+				injectionMode = 'before';
+			} else {
+				$target = $('#content, main').first();
+				injectionMode = 'append';
+			}
+		} else if (loc === 'sidebar-right' || loc === 'sidebar-left') {
+			$target = $('body');
+			injectionMode = 'append';
+		} else if (loc === 'custom') {
+			$target = $(groupAds[0].selector).first();
+			if (!$target.length) return;
+			injectionMode = 'prepend';
+		}
+
+		if (!$target || !$target.length) return;
+
+		const $carousel = $('<div></div>')
+			.attr('id', containerId)
+			.addClass('nodebb-ad-manager-unit nodebb-ad-carousel')
+			.css({
+				'position': (loc === 'sidebar-right' || loc === 'sidebar-left') ? 'fixed' : 'relative',
+				'display': 'block',
+				'clear': 'both'
+			});
+
+		if (loc === 'sidebar-right') {
+			$carousel.addClass('nodebb-ad-sidebar-right').css({
+				'top': '100px',
+				'right': '70px',
+				'width': '150px',
+				'z-index': '999'
+			});
+		} else if (loc === 'sidebar-left') {
+			$carousel.addClass('nodebb-ad-sidebar-left').css({
+				'top': '100px',
+				'left': '70px',
+				'width': '150px',
+				'z-index': '999'
+			});
+		} else {
+			$carousel.css({
+				'width': '100%',
+				'max-width': '1100px',
+				'margin': '15px auto 25px auto',
+				'text-align': 'center'
+			});
+		}
+
+		const maxH = (loc === 'top' || loc === 'bottom') ? '180px' : '450px';
+		const $slidesWrapper = $('<div></div>').css({
+			'position': 'relative',
+			'width': '100%',
+			'min-height': (loc === 'top' || loc === 'bottom') ? '90px' : '250px',
+			'overflow': 'hidden',
+			'border-radius': '10px'
 		});
 
-		adjustSideBannerLayout();
+		const $slides = [];
+		groupAds.forEach(function (ad, index) {
+			let innerContent = ad.html;
+			if (!innerContent && ad.image && ad.link) {
+				const directImg = formatGoogleDriveUrl(ad.image);
+				innerContent = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%; text-decoration:none;">
+					<img src="${directImg}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:${maxH}; object-fit:contain; border-radius:8px; display:block; margin:0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.12);">
+				</a>`;
+			}
+
+			const $slide = $('<div></div>')
+				.addClass('nodebb-ad-slide')
+				.attr('data-ad-id', ad.id)
+				.css({
+					'position': index === 0 ? 'relative' : 'absolute',
+					'top': '0',
+					'left': '0',
+					'width': '100%',
+					'opacity': index === 0 ? '1' : '0',
+					'z-index': index === 0 ? '2' : '1',
+					'transition': 'opacity 0.6s ease-in-out',
+					'pointer-events': index === 0 ? 'auto' : 'none'
+				})
+				.html(innerContent);
+
+			$slide.off('click').on('click', function () {
+				trackAdClick(ad.id);
+			});
+
+			$slidesWrapper.append($slide);
+			$slides.push($slide);
+		});
+
+		$carousel.append($slidesWrapper);
+
+		if (injectionMode === 'after') {
+			$target.after($carousel);
+		} else if (injectionMode === 'before') {
+			$target.before($carousel);
+		} else if (injectionMode === 'append') {
+			$target.append($carousel);
+		} else {
+			$target.prepend($carousel);
+		}
+
+		// Rotation Timer (default 9s or ad specified)
+		let currentIdx = 0;
+		const intervalSec = Math.max(2, parseInt(groupAds[0].rotateInterval, 10) || 9);
+		let timerId = null;
+
+		function showNextSlide() {
+			const nextIdx = (currentIdx + 1) % $slides.length;
+			$slides[currentIdx].css({ 'opacity': '0', 'z-index': '1', 'pointer-events': 'none' });
+			$slides[nextIdx].css({ 'opacity': '1', 'z-index': '2', 'pointer-events': 'auto' });
+			currentIdx = nextIdx;
+		}
+
+		function startTimer() {
+			if (!timerId) {
+				timerId = setInterval(showNextSlide, intervalSec * 1000);
+			}
+		}
+
+		function stopTimer() {
+			if (timerId) {
+				clearInterval(timerId);
+				timerId = null;
+			}
+		}
+
+		startTimer();
+		$carousel.on('mouseenter', stopTimer).on('mouseleave', startTimer);
 	}
 
 	function adjustSideBannerLayout() {

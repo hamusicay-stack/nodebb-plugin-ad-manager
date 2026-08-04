@@ -66,7 +66,13 @@
 									<option value="desktop">💻 מחשב בלבד</option>
 									<option value="mobile">📱 מובייל בלבד</option>
 								</select>
+								<div class="input-group input-group-sm mt-1" title="זמן רוטציה בשניות אם יש כמה מודעות באותו מיקום">
+									<span class="input-group-text">🔄</span>
+									<input type="number" min="2" max="120" class="form-control ad-rotate-interval" value="{ads.rotateInterval}">
+									<span class="input-group-text">שניות</span>
+								</div>
 							</td>
+
 
 
 							<td>
