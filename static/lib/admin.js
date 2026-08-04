@@ -2,7 +2,7 @@
 
 /* global define, $, config */
 
-define('admin/plugins/ad-manager', ['api', 'alerts'], function (api, alerts) {
+define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 	const ACP = {};
 
 	ACP.init = function () {
@@ -12,19 +12,17 @@ define('admin/plugins/ad-manager', ['api', 'alerts'], function (api, alerts) {
 			return;
 		}
 
-		// 2. Query database using NodeBB's native API helper (includes CSRF tokens & admin auth headers)
-		api.get('/admin/plugins/ad-manager/ads')
-			.then(function (res) {
-				const ads = (res && res.ads) || [];
-				populateTable(ads);
-			})
-			.catch(function (err) {
-				console.error('[ad-manager] Failed to fetch ACP ads:', err);
-				// Safeguard: Never clear existing DOM rows on network failure!
-				if ($('#ad-units-tbody .ad-unit-row').length === 0) {
-					ACP.addAdRow();
-				}
-			});
+		// 2. Fetch using direct API endpoint
+		const relPath = (typeof config !== 'undefined' && config.relative_path) ? config.relative_path : '';
+		$.getJSON(relPath + '/api/admin/plugins/ad-manager/ads', function (res) {
+			const ads = (res && res.ads) || [];
+			populateTable(ads);
+		}).fail(function (err) {
+			console.warn('[ad-manager] Failed to fetch ACP ads:', err);
+			if ($('#ad-units-tbody .ad-unit-row').length === 0) {
+				ACP.addAdRow();
+			}
+		});
 	};
 
 	function populateTable(adList) {
@@ -37,6 +35,7 @@ define('admin/plugins/ad-manager', ['api', 'alerts'], function (api, alerts) {
 			ACP.addAdRow();
 		}
 	}
+
 
 
 
@@ -251,23 +250,33 @@ define('admin/plugins/ad-manager', ['api', 'alerts'], function (api, alerts) {
 
 
 
-		api.post('/admin/plugins/ad-manager/ads', { ads: ads })
-			.then(function (res) {
+		const relPath = (typeof config !== 'undefined' && config.relative_path) ? config.relative_path : '';
+		const csrfToken = (typeof config !== 'undefined' && config.csrf_token) ? config.csrf_token : '';
+
+		$.ajax({
+			url: relPath + '/api/admin/plugins/ad-manager/ads',
+			type: 'POST',
+			contentType: 'application/json',
+			data: JSON.stringify({ ads: ads }),
+			headers: {
+				'x-csrf-token': csrfToken
+			},
+			success: function (res) {
 				if (res && res.success) {
 					alerts.success('הגדרות Ad Manager נשמרו בהצלחה!');
-					if (res.ads) {
-						if (typeof ajaxify !== 'undefined' && ajaxify.data) {
-							ajaxify.data.ads = res.ads;
-						}
+					if (res.ads && typeof ajaxify !== 'undefined' && ajaxify.data) {
+						ajaxify.data.ads = res.ads;
 					}
 				} else {
 					alerts.error('שגיאה בשמירת ההגדרות.');
 				}
-			})
-			.catch(function (err) {
-				alerts.error('שגיאה בשמירה: ' + (err.message || 'Error'));
-			});
+			},
+			error: function (err) {
+				alerts.error('שגיאה בשמירה: ' + (err.responseJSON ? err.responseJSON.error : 'Server Error'));
+			}
+		});
 	};
+
 
 
 	function escapeHtml(str) {
