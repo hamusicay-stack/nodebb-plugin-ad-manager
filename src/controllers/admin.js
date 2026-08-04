@@ -10,13 +10,18 @@ const adminController = {};
  * Helper to fetch stored ads list from NodeBB database
  */
 async function getStoredAds() {
-	const rawData = await db.getObjectField(DB_KEY, 'units');
-	if (!rawData) {
-		return [];
-	}
 	try {
-		return typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+		let rawData = await db.getObjectField(DB_KEY, 'units');
+		if (!rawData) {
+			rawData = await db.get(DB_KEY + ':units_raw');
+		}
+		if (!rawData) {
+			return [];
+		}
+		const parsed = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+		return Array.isArray(parsed) ? parsed : [];
 	} catch (err) {
+		console.error('[ad-manager] Error reading stored ads:', err);
 		return [];
 	}
 }
@@ -55,12 +60,28 @@ adminController.getAds = async function (req, res, next) {
  */
 adminController.saveAds = async function (req, res, next) {
 	try {
-		const { ads } = req.body;
+		let ads = req.body ? req.body.ads : null;
+		if (typeof ads === 'string') {
+			try {
+				ads = JSON.parse(ads);
+			} catch (e) {
+				ads = null;
+			}
+		}
+		if (!ads && typeof req.body === 'string') {
+			try {
+				const parsed = JSON.parse(req.body);
+				ads = parsed.ads;
+			} catch (e) {
+				ads = null;
+			}
+		}
+
 		if (!Array.isArray(ads)) {
 			return res.status(400).json({ error: 'Invalid payload. "ads" must be an array.' });
 		}
 
-		// Ensure proper formatting and preserve existing click counts if not explicitly updated
+		// Ensure proper formatting and preserve existing click counts
 		const formattedAds = ads.map(ad => ({
 			id: ad.id || `ad_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
 			name: String(ad.name || '').trim(),
@@ -79,13 +100,9 @@ adminController.saveAds = async function (req, res, next) {
 			clicks: parseInt(ad.clicks, 10) || 0
 		}));
 
-
-
-
-
-
-
+		// Persist to NodeBB Database
 		await db.setObjectField(DB_KEY, 'units', JSON.stringify(formattedAds));
+		await db.set(DB_KEY + ':units_raw', JSON.stringify(formattedAds));
 
 		res.json({ success: true, ads: formattedAds });
 	} catch (err) {

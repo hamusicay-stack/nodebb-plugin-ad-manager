@@ -266,10 +266,21 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 			success: function (res) {
 				if (res && res.success) {
 					alerts.success('הגדרות Ad Manager נשמרו בהצלחה!');
+					if (res.ads) {
+						const scriptElem = document.getElementById('ad-manager-saved-data');
+						if (scriptElem) {
+							scriptElem.textContent = JSON.stringify(res.ads);
+						}
+						if (typeof ajaxify !== 'undefined' && ajaxify.data) {
+							ajaxify.data.ads = res.ads;
+							ajaxify.data.adsJson = JSON.stringify(res.ads);
+						}
+					}
 				} else {
 					alerts.error('שגיאה בשמירת ההגדרות.');
 				}
 			},
+
 			error: function (err) {
 				alerts.error('שגיאה בשמירה: ' + (err.responseJSON ? err.responseJSON.error : err.statusText));
 			}
