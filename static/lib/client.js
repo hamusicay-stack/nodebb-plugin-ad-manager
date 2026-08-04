@@ -39,11 +39,49 @@ $(document).ready(function () {
 		return url;
 	}
 
+	function shouldShowAdOnCurrentPage(ad) {
+		const pageTarget = ad.pageTarget || 'all';
+		if (pageTarget === 'all') {
+			return true;
+		}
+
+		const path = window.location.pathname;
+		const tpl = (typeof config !== 'undefined' && config.template) || (typeof ajaxify !== 'undefined' && ajaxify.data && ajaxify.data.template) || '';
+
+		if (pageTarget === 'home') {
+			return path === '/' || path === '' || tpl === 'home';
+		}
+		if (pageTarget === 'recent') {
+			return path.indexOf('/recent') !== -1 || tpl === 'recent';
+		}
+		if (pageTarget === 'topic') {
+			return path.indexOf('/topic') !== -1 || tpl.indexOf('topic') === 0;
+		}
+		if (pageTarget === 'category') {
+			return path.indexOf('/category') !== -1 || tpl.indexOf('category') === 0;
+		}
+		if (pageTarget === 'custom_path' && ad.pagePath) {
+			const cleanPattern = ad.pagePath.trim().replace(/\*/g, '.*');
+			try {
+				const regex = new RegExp(cleanPattern, 'i');
+				return regex.test(path);
+			} catch (e) {
+				return path.indexOf(ad.pagePath.trim()) !== -1;
+			}
+		}
+		return true;
+	}
+
 	function injectAds(ads) {
 		ads.forEach(function (ad) {
+			if (!shouldShowAdOnCurrentPage(ad)) {
+				return;
+			}
+
 			if (!ad.html && !(ad.image && ad.link)) {
 				return;
 			}
+
 
 			const loc = ad.location || 'top';
 

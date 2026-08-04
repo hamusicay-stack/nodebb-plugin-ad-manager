@@ -65,11 +65,23 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 		}
 	});
 
+	// Handle page target change to toggle custom path input visibility
+	$(document).off('change', '#ad-manager-acp .ad-page-target').on('change', '#ad-manager-acp .ad-page-target', function () {
+		const $row = $(this).closest('.ad-unit-row');
+		if ($(this).val() === 'custom_path') {
+			$row.find('.ad-page-path-wrapper').show();
+		} else {
+			$row.find('.ad-page-path-wrapper').hide();
+		}
+	});
+
 	ACP.addAdRow = function (data) {
 		const ad = data || {
 			id: 'ad_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
 			name: '',
 			location: 'top',
+			pageTarget: 'all',
+			pagePath: '',
 			repeatEvery: 5,
 			selector: '',
 			image: '',
@@ -81,8 +93,10 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 		};
 
 		const loc = ad.location || 'top';
+		const pageTarget = ad.pageTarget || 'all';
 		const showSelector = loc === 'custom' ? '' : 'display: none;';
 		const showRepeat = loc === 'recent-feed' ? '' : 'display: none;';
+		const showPagePath = pageTarget === 'custom_path' ? '' : 'display: none;';
 		const directPreviewUrl = formatGoogleDriveUrl(ad.image);
 		const showPreview = directPreviewUrl ? 'block' : 'none';
 		const isActive = ad.active !== false && ad.active !== 'false';
@@ -95,7 +109,18 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 					</div>
 				</td>
 				<td>
-					<input type="text" class="form-control form-control-sm ad-name" placeholder="שם היחידה" value="${escapeAttr(ad.name)}">
+					<input type="text" class="form-control form-control-sm ad-name mb-1" placeholder="שם היחידה" value="${escapeAttr(ad.name)}">
+					<select class="form-select form-select-sm ad-page-target mb-1" title="תצוגה בדפים">
+						<option value="all" ${pageTarget === 'all' ? 'selected' : ''}>🌐 כל הדפים</option>
+						<option value="home" ${pageTarget === 'home' ? 'selected' : ''}>🏠 דף הבית בלבד</option>
+						<option value="recent" ${pageTarget === 'recent' ? 'selected' : ''}>🔥 נושאים אחרונים בלבד</option>
+						<option value="topic" ${pageTarget === 'topic' ? 'selected' : ''}>💬 דפי דיונים בלבד</option>
+						<option value="category" ${pageTarget === 'category' ? 'selected' : ''}>📁 דפי קטגוריות בלבד</option>
+						<option value="custom_path" ${pageTarget === 'custom_path' ? 'selected' : ''}>🔗 נתיב מותאם אישית</option>
+					</select>
+					<div class="ad-page-path-wrapper mb-1" style="${showPagePath}">
+						<input type="text" class="form-control ad-page-path form-control-sm" placeholder="למשל: /topic/*" value="${escapeAttr(ad.pagePath)}">
+					</div>
 				</td>
 				<td>
 					<select class="form-select form-select-sm ad-location mb-1">
@@ -156,6 +181,8 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 				active: $row.find('.ad-active').is(':checked'),
 				name: $row.find('.ad-name').val().trim(),
 				location: $row.find('.ad-location').val(),
+				pageTarget: $row.find('.ad-page-target').val(),
+				pagePath: $row.find('.ad-page-path').val().trim(),
 				repeatEvery: parseInt($row.find('.ad-repeat-every').val(), 10) || 5,
 				selector: $row.find('.ad-selector').val().trim(),
 				image: $row.find('.ad-image').val().trim(),
@@ -165,6 +192,7 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 				clicks: parseInt($row.find('.ad-clicks').text(), 10) || 0
 			});
 		});
+
 
 
 

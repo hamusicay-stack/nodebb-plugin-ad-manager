@@ -49,8 +49,20 @@
 								</div>
 							</td>
 							<td>
-								<input type="text" class="form-control form-control-sm ad-name" placeholder="שם היחידה" value="{ads.name}">
+								<input type="text" class="form-control form-control-sm ad-name mb-1" placeholder="שם היחידה" value="{ads.name}">
+								<select class="form-select form-select-sm ad-page-target mb-1" title="תצוגה בדפים">
+									<option value="all">🌐 כל הדפים</option>
+									<option value="home">🏠 דף הבית בלבד</option>
+									<option value="recent">🔥 נושאים אחרונים בלבד</option>
+									<option value="topic">💬 דפי דיונים בלבד</option>
+									<option value="category">📁 דפי קטגוריות בלבד</option>
+									<option value="custom_path">🔗 נתיב מותאם אישית</option>
+								</select>
+								<div class="ad-page-path-wrapper mb-1" style="display: none;">
+									<input type="text" class="form-control ad-page-path form-control-sm" placeholder="למשל: /topic/*" value="{ads.pagePath}">
+								</div>
 							</td>
+
 							<td>
 								<select class="form-select form-select-sm ad-location mb-1">
 									<option value="top">באנר עליון (לרוחב)</option>
