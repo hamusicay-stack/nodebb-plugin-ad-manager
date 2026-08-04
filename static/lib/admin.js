@@ -6,29 +6,39 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 	const ACP = {};
 
 	ACP.init = function () {
-		// Fetch saved ads from API to guarantee exact select dropdown states
-		$.getJSON(config.relative_path + '/api/admin/plugins/ad-manager/ads', function (response) {
-			$('#ad-units-tbody').empty();
-			const ads = (response && response.ads) || [];
-			if (ads.length) {
-				ads.forEach(function (ad) {
-					ACP.addAdRow(ad);
-				});
-			} else {
-				ACP.addAdRow();
-			}
-		}).fail(function () {
-			$('#ad-units-tbody').empty();
-			const ads = (typeof ajaxify !== 'undefined' && ajaxify.data && ajaxify.data.ads) || [];
-			if (ads.length) {
-				ads.forEach(function (ad) {
-					ACP.addAdRow(ad);
-				});
-			} else {
-				ACP.addAdRow();
-			}
-		});
+		const $rows = $('#ad-units-tbody .ad-unit-row');
+		if ($rows.length > 0) {
+			$rows.each(function () {
+				const $row = $(this);
+				const loc = $row.attr('data-location') || 'top';
+				const pageTarget = $row.attr('data-page-target') || 'all';
+				const deviceTarget = $row.attr('data-device-target') || 'all';
+
+				$row.find('.ad-location').val(loc);
+				$row.find('.ad-page-target').val(pageTarget);
+				$row.find('.ad-device-target').val(deviceTarget);
+
+				if (loc === 'custom') {
+					$row.find('.ad-selector-wrapper').show();
+				} else if (loc === 'recent-feed') {
+					$row.find('.ad-repeat-wrapper').show();
+				}
+
+				if (pageTarget === 'custom_path') {
+					$row.find('.ad-page-path-wrapper').show();
+				}
+
+				const rawUrl = $row.find('.ad-image').val().trim();
+				const directUrl = formatGoogleDriveUrl(rawUrl);
+				if (directUrl) {
+					$row.find('.ad-preview-img').attr('src', directUrl).show();
+				}
+			});
+		} else {
+			ACP.addAdRow();
+		}
 	};
+
 
 
 	// Global event delegation on document for #ad-manager-acp elements
