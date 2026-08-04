@@ -40,21 +40,12 @@
 							<th style="width: 60px;" class="text-center">פעולות</th>
 						</tr>
 					</thead>
-					<tbody id="ad-units-tbody">
-						<!-- Dynamically rendered by admin.js with explicit 'selected' option attributes -->
-					</tbody>
-
-
-
+					<tbody id="ad-units-tbody"></tbody>
 				</table>
 			</div>
 		</div>
 	</div>
 </div>
-
-<script id="ad-manager-saved-data" type="application/json">
-{{{adsJson}}}
-</script>
 
 <script>
 	require(['admin/plugins/ad-manager'], function (manager) {
@@ -63,6 +54,7 @@
 		}
 	});
 </script>
+
 
 
 

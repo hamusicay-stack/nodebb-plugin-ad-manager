@@ -6,58 +6,22 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 	const ACP = {};
 
 	ACP.init = function () {
-		let ads = null;
-
-		// 1. Try reading embedded script tag with HTML entity decoding
-		const dataElem = document.getElementById('ad-manager-saved-data');
-		if (dataElem && dataElem.textContent) {
-			const rawText = dataElem.textContent.trim();
-			if (rawText) {
-				const decoded = rawText
-					.replace(/&quot;/g, '"')
-					.replace(/&#34;/g, '"')
-					.replace(/&amp;/g, '&')
-					.replace(/&lt;/g, '<')
-					.replace(/&gt;/g, '>');
-				try {
-					ads = JSON.parse(decoded);
-				} catch (e) {
-					console.warn('[ad-manager] Failed to parse script json:', e);
-				}
-			}
-		}
-
-		// 2. Try reading ajaxify.data.ads
-		if ((!Array.isArray(ads) || !ads.length) && typeof ajaxify !== 'undefined' && ajaxify.data && Array.isArray(ajaxify.data.ads) && ajaxify.data.ads.length) {
-			ads = ajaxify.data.ads;
-		}
-
-		function populateTable(adList) {
+		$.get(config.relative_path + '/api/admin/plugins/ad-manager/ads', function (res) {
 			$('#ad-units-tbody').empty();
-			if (Array.isArray(adList) && adList.length > 0) {
-				adList.forEach(function (ad) {
+			const ads = (res && res.ads) || [];
+			if (ads.length > 0) {
+				ads.forEach(function (ad) {
 					ACP.addAdRow(ad);
 				});
 			} else {
 				ACP.addAdRow();
 			}
-		}
-
-		if (Array.isArray(ads) && ads.length > 0) {
-			populateTable(ads);
-		} else {
-			// 3. Fallback: Query database API directly
-			$.getJSON(config.relative_path + '/api/admin/plugins/ad-manager/ads', function (res) {
-				if (res && res.success && Array.isArray(res.ads) && res.ads.length > 0) {
-					populateTable(res.ads);
-				} else {
-					populateTable([]);
-				}
-			}).fail(function () {
-				populateTable([]);
-			});
-		}
+		}).fail(function () {
+			$('#ad-units-tbody').empty();
+			ACP.addAdRow();
+		});
 	};
+
 
 
 
