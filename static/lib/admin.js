@@ -6,7 +6,19 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 	const ACP = {};
 
 	ACP.init = function () {
-		let ads = (typeof ajaxify !== 'undefined' && ajaxify.data && ajaxify.data.ads) || [];
+		let ads = [];
+		const dataElem = document.getElementById('ad-manager-saved-data');
+		if (dataElem && dataElem.textContent) {
+			try {
+				ads = JSON.parse(dataElem.textContent);
+			} catch (e) {
+				ads = [];
+			}
+		}
+
+		if ((!ads || !ads.length) && typeof ajaxify !== 'undefined' && ajaxify.data && ajaxify.data.ads) {
+			ads = ajaxify.data.ads;
+		}
 
 		function renderRows(adList) {
 			$('#ad-units-tbody').empty();
@@ -33,6 +45,7 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 			});
 		}
 	};
+
 
 
 

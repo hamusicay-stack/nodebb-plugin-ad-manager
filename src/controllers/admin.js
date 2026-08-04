@@ -29,12 +29,14 @@ adminController.render = async function (req, res, next) {
 		const ads = await getStoredAds();
 		res.render('admin/plugins/ad-manager', {
 			title: 'Ad Manager',
-			ads: ads
+			ads: ads,
+			adsJson: JSON.stringify(ads)
 		});
 	} catch (err) {
 		next(err);
 	}
 };
+
 
 /**
  * API Endpoint: Fetch current ad units (for ACP)
