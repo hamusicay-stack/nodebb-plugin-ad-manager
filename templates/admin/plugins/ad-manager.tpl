@@ -61,7 +61,13 @@
 								<div class="ad-page-path-wrapper mb-1" style="display: none;">
 									<input type="text" class="form-control ad-page-path form-control-sm" placeholder="למשל: /topic/*" value="{ads.pagePath}">
 								</div>
+								<select class="form-select form-select-sm ad-device-target mb-1" title="תצוגה במכשירים">
+									<option value="all">💻📱 כל המכשירים</option>
+									<option value="desktop">💻 מחשב בלבד</option>
+									<option value="mobile">📱 מובייל בלבד</option>
+								</select>
 							</td>
+
 
 							<td>
 								<select class="form-select form-select-sm ad-location mb-1">

@@ -72,15 +72,32 @@ $(document).ready(function () {
 		return true;
 	}
 
+	function shouldShowAdOnCurrentDevice(ad) {
+		const deviceTarget = ad.deviceTarget || 'all';
+		if (deviceTarget === 'all') {
+			return true;
+		}
+
+		const isMobile = window.matchMedia('(max-width: 991px)').matches || $(window).width() < 992;
+		if (deviceTarget === 'desktop') {
+			return !isMobile;
+		}
+		if (deviceTarget === 'mobile') {
+			return isMobile;
+		}
+		return true;
+	}
+
 	function injectAds(ads) {
 		ads.forEach(function (ad) {
-			if (!shouldShowAdOnCurrentPage(ad)) {
+			if (!shouldShowAdOnCurrentPage(ad) || !shouldShowAdOnCurrentDevice(ad)) {
 				return;
 			}
 
 			if (!ad.html && !(ad.image && ad.link)) {
 				return;
 			}
+
 
 
 			const loc = ad.location || 'top';

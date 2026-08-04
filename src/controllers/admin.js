@@ -65,6 +65,7 @@ adminController.saveAds = async function (req, res, next) {
 			location: String(ad.location || 'top').trim(),
 			pageTarget: String(ad.pageTarget || 'all').trim(),
 			pagePath: String(ad.pagePath || '').trim(),
+			deviceTarget: String(ad.deviceTarget || 'all').trim(),
 			repeatEvery: Math.max(1, parseInt(ad.repeatEvery, 10) || 5),
 			selector: String(ad.selector || '').trim(),
 			image: String(ad.image || '').trim(),
@@ -74,6 +75,7 @@ adminController.saveAds = async function (req, res, next) {
 			active: ad.active === true || ad.active === 'true' || ad.active === 'on' || ad.active === 1,
 			clicks: parseInt(ad.clicks, 10) || 0
 		}));
+
 
 
 

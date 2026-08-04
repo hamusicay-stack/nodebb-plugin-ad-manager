@@ -72,12 +72,14 @@ apiController.getAds = async function (req, res, next) {
 					location: ad.location || 'top',
 					pageTarget: ad.pageTarget || 'all',
 					pagePath: ad.pagePath || '',
+					deviceTarget: ad.deviceTarget || 'all',
 					repeatEvery: parseInt(ad.repeatEvery, 10) || 5,
 					selector: ad.selector,
 					image: directImageUrl,
 					link: ad.link,
 					html: effectiveHtml
 				};
+
 
 			});
 		res.json({ success: true, ads: activeAds });

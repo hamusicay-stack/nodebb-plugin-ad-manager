@@ -82,6 +82,7 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 			location: 'top',
 			pageTarget: 'all',
 			pagePath: '',
+			deviceTarget: 'all',
 			repeatEvery: 5,
 			selector: '',
 			image: '',
@@ -94,6 +95,7 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 
 		const loc = ad.location || 'top';
 		const pageTarget = ad.pageTarget || 'all';
+		const deviceTarget = ad.deviceTarget || 'all';
 		const showSelector = loc === 'custom' ? '' : 'display: none;';
 		const showRepeat = loc === 'recent-feed' ? '' : 'display: none;';
 		const showPagePath = pageTarget === 'custom_path' ? '' : 'display: none;';
@@ -121,6 +123,11 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 					<div class="ad-page-path-wrapper mb-1" style="${showPagePath}">
 						<input type="text" class="form-control ad-page-path form-control-sm" placeholder="למשל: /topic/*" value="${escapeAttr(ad.pagePath)}">
 					</div>
+					<select class="form-select form-select-sm ad-device-target mb-1" title="תצוגה במכשירים">
+						<option value="all" ${deviceTarget === 'all' ? 'selected' : ''}>💻📱 כל המכשירים</option>
+						<option value="desktop" ${deviceTarget === 'desktop' ? 'selected' : ''}>💻 מחשב בלבד</option>
+						<option value="mobile" ${deviceTarget === 'mobile' ? 'selected' : ''}>📱 מובייל בלבד</option>
+					</select>
 				</td>
 				<td>
 					<select class="form-select form-select-sm ad-location mb-1">
@@ -183,6 +190,7 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 				location: $row.find('.ad-location').val(),
 				pageTarget: $row.find('.ad-page-target').val(),
 				pagePath: $row.find('.ad-page-path').val().trim(),
+				deviceTarget: $row.find('.ad-device-target').val(),
 				repeatEvery: parseInt($row.find('.ad-repeat-every').val(), 10) || 5,
 				selector: $row.find('.ad-selector').val().trim(),
 				image: $row.find('.ad-image').val().trim(),
@@ -192,6 +200,7 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 				clicks: parseInt($row.find('.ad-clicks').text(), 10) || 0
 			});
 		});
+
 
 
 
