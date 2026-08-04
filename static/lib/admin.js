@@ -1,32 +1,52 @@
 'use strict';
 
-/* global define, $, config */
+/* global define, $, config, ajaxify */
 
 define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 	const ACP = {};
 
 	ACP.init = function () {
-		// 1. Try reading ajaxify.data.ads if already populated natively by NodeBB
-		if (typeof ajaxify !== 'undefined' && ajaxify.data && Array.isArray(ajaxify.data.ads) && ajaxify.data.ads.length > 0) {
-			populateTable(ajaxify.data.ads);
+		// If #ad-units-tbody is not ready in DOM yet, retry shortly
+		if ($('#ad-units-tbody').length === 0) {
+			setTimeout(ACP.init, 50);
 			return;
 		}
 
-		// 2. Fetch using direct API endpoint
-		const relPath = (typeof config !== 'undefined' && config.relative_path) ? config.relative_path : '';
-		$.getJSON(relPath + '/api/admin/plugins/ad-manager/ads', function (res) {
-			const ads = (res && res.ads) || [];
+		let ads = null;
+
+		// 1. Try reading ajaxify.data.ads if already populated natively by NodeBB on render
+		if (typeof ajaxify !== 'undefined' && ajaxify.data && Array.isArray(ajaxify.data.ads) && ajaxify.data.ads.length > 0) {
+			ads = ajaxify.data.ads;
+		}
+
+		if (Array.isArray(ads) && ads.length > 0) {
 			populateTable(ads);
-		}).fail(function (err) {
-			console.warn('[ad-manager] Failed to fetch ACP ads:', err);
-			if ($('#ad-units-tbody .ad-unit-row').length === 0) {
-				ACP.addAdRow();
-			}
-		});
+		} else {
+			// 2. Fetch using direct API endpoint with safe relative path
+			const relPath = (typeof config !== 'undefined' && config.relative_path) ? config.relative_path : '';
+			$.ajax({
+				url: relPath + '/api/admin/plugins/ad-manager/ads',
+				type: 'GET',
+				success: function (res) {
+					const fetchedAds = (res && res.ads) || [];
+					populateTable(fetchedAds);
+				},
+				error: function (err) {
+					console.warn('[ad-manager] Failed to fetch ACP ads:', err);
+					if ($('#ad-units-tbody .ad-unit-row').length === 0) {
+						populateTable([]);
+					}
+				}
+			});
+		}
 	};
 
 	function populateTable(adList) {
-		$('#ad-units-tbody').empty();
+		const $tbody = $('#ad-units-tbody');
+		if ($tbody.length === 0) {
+			return;
+		}
+		$tbody.empty();
 		if (Array.isArray(adList) && adList.length > 0) {
 			adList.forEach(function (ad) {
 				ACP.addAdRow(ad);
@@ -35,6 +55,14 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 			ACP.addAdRow();
 		}
 	}
+
+	// Automatically trigger initialization when NodeBB completes ACP page transition
+	$(window).on('action:ajaxify.end', function (ev, data) {
+		if (data && data.url && data.url.startsWith('admin/plugins/ad-manager')) {
+			ACP.init();
+		}
+	});
+
 
 
 
