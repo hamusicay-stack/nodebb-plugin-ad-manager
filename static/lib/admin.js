@@ -6,23 +6,35 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 	const ACP = {};
 
 	ACP.init = function () {
-		let ads = [];
+		let ads = null;
+
+		// 1. Try reading embedded script tag with HTML entity decoding
 		const dataElem = document.getElementById('ad-manager-saved-data');
 		if (dataElem && dataElem.textContent) {
-			try {
-				ads = JSON.parse(dataElem.textContent);
-			} catch (e) {
-				ads = [];
+			const rawText = dataElem.textContent.trim();
+			if (rawText) {
+				const decoded = rawText
+					.replace(/&quot;/g, '"')
+					.replace(/&#34;/g, '"')
+					.replace(/&amp;/g, '&')
+					.replace(/&lt;/g, '<')
+					.replace(/&gt;/g, '>');
+				try {
+					ads = JSON.parse(decoded);
+				} catch (e) {
+					console.warn('[ad-manager] Failed to parse script json:', e);
+				}
 			}
 		}
 
-		if ((!ads || !ads.length) && typeof ajaxify !== 'undefined' && ajaxify.data && ajaxify.data.ads) {
+		// 2. Try reading ajaxify.data.ads
+		if ((!Array.isArray(ads) || !ads.length) && typeof ajaxify !== 'undefined' && ajaxify.data && Array.isArray(ajaxify.data.ads) && ajaxify.data.ads.length) {
 			ads = ajaxify.data.ads;
 		}
 
-		function renderRows(adList) {
+		function populateTable(adList) {
 			$('#ad-units-tbody').empty();
-			if (adList && adList.length > 0) {
+			if (Array.isArray(adList) && adList.length > 0) {
 				adList.forEach(function (ad) {
 					ACP.addAdRow(ad);
 				});
@@ -31,20 +43,22 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 			}
 		}
 
-		if (ads && ads.length > 0) {
-			renderRows(ads);
+		if (Array.isArray(ads) && ads.length > 0) {
+			populateTable(ads);
 		} else {
-			$.getJSON(config.relative_path + '/api/admin/plugins/ad-manager/ads', function (response) {
-				if (response && response.ads && response.ads.length > 0) {
-					renderRows(response.ads);
+			// 3. Fallback: Query database API directly
+			$.getJSON(config.relative_path + '/api/admin/plugins/ad-manager/ads', function (res) {
+				if (res && res.success && Array.isArray(res.ads) && res.ads.length > 0) {
+					populateTable(res.ads);
 				} else {
-					renderRows([]);
+					populateTable([]);
 				}
 			}).fail(function () {
-				renderRows([]);
+				populateTable([]);
 			});
 		}
 	};
+
 
 
 
