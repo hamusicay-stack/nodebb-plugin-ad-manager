@@ -229,7 +229,12 @@ $(document).ready(function () {
 
 
 	function injectRecentFeedAds(ad) {
-		const $topics = $('[component="category/topic"], [data-tid], .category-item, ul.topic-list > li, .topics-list > div, .topic-row, [component="topic/teaser"]');
+		// Filter ONLY top-level topic row items, excluding inner teasers or posts
+		const $topics = $('[component="category/topic"], .category-item, ul.topic-list > li.category-item, .topics-list > .topic-row, li[data-tid]')
+			.filter(function () {
+				return !$(this).closest('[component="topic/teaser"], .teaser, [component="post"]').length;
+			});
+
 		const interval = Math.max(1, parseInt(ad.repeatEvery, 10) || 3);
 
 		if ($topics.length > 0) {
@@ -257,7 +262,7 @@ $(document).ready(function () {
 						.css({
 							'display': 'block',
 							'width': '100%',
-							'margin': '12px 0',
+							'margin': '15px 0',
 							'padding': '16px 20px',
 							'background': 'var(--bs-card-bg, #ffffff)',
 							'border': '1px solid var(--bs-card-border-color, rgba(0,0,0,0.12))',
@@ -269,6 +274,7 @@ $(document).ready(function () {
 						})
 						.html(innerContent);
 
+					// Inject after the top-level topic container
 					$(this).after($adCard);
 
 					$adCard.off('click').on('click', function () {
@@ -315,6 +321,7 @@ $(document).ready(function () {
 			});
 		}
 	}
+
 
 
 
