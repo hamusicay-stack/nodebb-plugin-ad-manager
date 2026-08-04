@@ -6,38 +6,34 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 	const ACP = {};
 
 	ACP.init = function () {
-		const $rows = $('#ad-units-tbody .ad-unit-row');
-		if ($rows.length > 0) {
-			$rows.each(function () {
-				const $row = $(this);
-				const loc = $row.attr('data-location') || 'top';
-				const pageTarget = $row.attr('data-page-target') || 'all';
-				const deviceTarget = $row.attr('data-device-target') || 'all';
+		let ads = (typeof ajaxify !== 'undefined' && ajaxify.data && ajaxify.data.ads) || [];
 
-				$row.find('.ad-location').val(loc);
-				$row.find('.ad-page-target').val(pageTarget);
-				$row.find('.ad-device-target').val(deviceTarget);
+		function renderRows(adList) {
+			$('#ad-units-tbody').empty();
+			if (adList && adList.length > 0) {
+				adList.forEach(function (ad) {
+					ACP.addAdRow(ad);
+				});
+			} else {
+				ACP.addAdRow();
+			}
+		}
 
-				if (loc === 'custom') {
-					$row.find('.ad-selector-wrapper').show();
-				} else if (loc === 'recent-feed') {
-					$row.find('.ad-repeat-wrapper').show();
-				}
-
-				if (pageTarget === 'custom_path') {
-					$row.find('.ad-page-path-wrapper').show();
-				}
-
-				const rawUrl = $row.find('.ad-image').val().trim();
-				const directUrl = formatGoogleDriveUrl(rawUrl);
-				if (directUrl) {
-					$row.find('.ad-preview-img').attr('src', directUrl).show();
-				}
-			});
+		if (ads && ads.length > 0) {
+			renderRows(ads);
 		} else {
-			ACP.addAdRow();
+			$.getJSON(config.relative_path + '/api/admin/plugins/ad-manager/ads', function (response) {
+				if (response && response.ads && response.ads.length > 0) {
+					renderRows(response.ads);
+				} else {
+					renderRows([]);
+				}
+			}).fail(function () {
+				renderRows([]);
+			});
 		}
 	};
+
 
 
 
