@@ -2,63 +2,42 @@
 
 /* global define, $, config */
 
-define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
+define('admin/plugins/ad-manager', ['api', 'alerts'], function (api, alerts) {
 	const ACP = {};
 
 	ACP.init = function () {
-		const relPath = (typeof config !== 'undefined' && config.relative_path) ? config.relative_path : '';
-
-		// 1. Try reading ajaxify.data.ads first (populated natively by NodeBB on render)
-		let ads = (typeof ajaxify !== 'undefined' && ajaxify.data && Array.isArray(ajaxify.data.ads)) ? ajaxify.data.ads : null;
-
-		// 2. If ajaxify.data.ads is not found or empty, try reading embedded script tag
-		if (!ads || !ads.length) {
-			const dataElem = document.getElementById('ad-manager-saved-data');
-			if (dataElem && dataElem.textContent) {
-				const rawText = dataElem.textContent.trim();
-				if (rawText) {
-					const decoded = rawText
-						.replace(/&quot;/g, '"')
-						.replace(/&#34;/g, '"')
-						.replace(/&amp;/g, '&')
-						.replace(/&lt;/g, '<')
-						.replace(/&gt;/g, '>');
-					try {
-						ads = JSON.parse(decoded);
-					} catch (e) {}
-				}
-			}
+		// 1. Try reading ajaxify.data.ads if already populated natively by NodeBB
+		if (typeof ajaxify !== 'undefined' && ajaxify.data && Array.isArray(ajaxify.data.ads) && ajaxify.data.ads.length > 0) {
+			populateTable(ajaxify.data.ads);
+			return;
 		}
 
-		function populateTable(adList) {
-			$('#ad-units-tbody').empty();
-			if (Array.isArray(adList) && adList.length > 0) {
-				adList.forEach(function (ad) {
-					ACP.addAdRow(ad);
-				});
-			} else {
-				ACP.addAdRow();
-			}
-		}
-
-		// If we already have ads from ajaxify or script tag, render them IMMEDIATELY
-		if (Array.isArray(ads) && ads.length > 0) {
-			populateTable(ads);
-		} else {
-			// 3. Fallback: Query database API directly using safe relPath
-			$.getJSON(relPath + '/api/admin/plugins/ad-manager/ads', function (res) {
-				if (res && res.success && Array.isArray(res.ads) && res.ads.length > 0) {
-					populateTable(res.ads);
-				} else if (Array.isArray(res) && res.length > 0) {
-					populateTable(res);
-				} else {
-					populateTable([]);
+		// 2. Query database using NodeBB's native API helper (includes CSRF tokens & admin auth headers)
+		api.get('/admin/plugins/ad-manager/ads')
+			.then(function (res) {
+				const ads = (res && res.ads) || [];
+				populateTable(ads);
+			})
+			.catch(function (err) {
+				console.error('[ad-manager] Failed to fetch ACP ads:', err);
+				// Safeguard: Never clear existing DOM rows on network failure!
+				if ($('#ad-units-tbody .ad-unit-row').length === 0) {
+					ACP.addAdRow();
 				}
-			}).fail(function () {
-				populateTable([]);
 			});
-		}
 	};
+
+	function populateTable(adList) {
+		$('#ad-units-tbody').empty();
+		if (Array.isArray(adList) && adList.length > 0) {
+			adList.forEach(function (ad) {
+				ACP.addAdRow(ad);
+			});
+		} else {
+			ACP.addAdRow();
+		}
+	}
+
 
 
 
@@ -272,37 +251,24 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 
 
 
-		$.ajax({
-			url: config.relative_path + '/api/admin/plugins/ad-manager/ads',
-			type: 'POST',
-			contentType: 'application/json',
-			data: JSON.stringify({ ads: ads }),
-			headers: {
-				'x-csrf-token': config.csrf_token
-			},
-			success: function (res) {
+		api.post('/admin/plugins/ad-manager/ads', { ads: ads })
+			.then(function (res) {
 				if (res && res.success) {
 					alerts.success('הגדרות Ad Manager נשמרו בהצלחה!');
 					if (res.ads) {
-						const scriptElem = document.getElementById('ad-manager-saved-data');
-						if (scriptElem) {
-							scriptElem.textContent = JSON.stringify(res.ads);
-						}
 						if (typeof ajaxify !== 'undefined' && ajaxify.data) {
 							ajaxify.data.ads = res.ads;
-							ajaxify.data.adsJson = JSON.stringify(res.ads);
 						}
 					}
 				} else {
 					alerts.error('שגיאה בשמירת ההגדרות.');
 				}
-			},
-
-			error: function (err) {
-				alerts.error('שגיאה בשמירה: ' + (err.responseJSON ? err.responseJSON.error : err.statusText));
-			}
-		});
+			})
+			.catch(function (err) {
+				alerts.error('שגיאה בשמירה: ' + (err.message || 'Error'));
+			});
 	};
+
 
 	function escapeHtml(str) {
 		return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
