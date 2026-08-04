@@ -28,6 +28,17 @@ $(document).ready(function () {
 			});
 	}
 
+	function formatGoogleDriveUrl(url) {
+		if (!url) return '';
+		url = String(url).trim();
+		const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?.*id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]+)/i;
+		const match = url.match(driveRegex);
+		if (match && match[1]) {
+			return 'https://lh3.googleusercontent.com/d/' + match[1];
+		}
+		return url;
+	}
+
 	function injectAds(ads) {
 		ads.forEach(function (ad) {
 			if (!ad.html && !(ad.image && ad.link)) {
@@ -50,14 +61,17 @@ $(document).ready(function () {
 			let $target;
 			let injectionMode = 'prepend';
 
+			const imageUrl = formatGoogleDriveUrl(ad.image);
+
 			// Proportional image rendering
 			let innerContent = ad.html;
-			if (!innerContent && ad.image && ad.link) {
+			if (!innerContent && imageUrl && ad.link) {
 				const maxH = (loc === 'top' || loc === 'bottom') ? '180px' : '450px';
 				innerContent = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%; text-decoration:none;">
-					<img src="${ad.image}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:${maxH}; object-fit:contain; border-radius:8px; display:block; margin:0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.12);">
+					<img src="${imageUrl}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:${maxH}; object-fit:contain; border-radius:8px; display:block; margin:0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.12);">
 				</a>`;
 			}
+
 
 			const $container = $('<div></div>')
 				.attr('id', adContainerId)

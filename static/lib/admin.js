@@ -42,6 +42,29 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 		}
 	});
 
+	function formatGoogleDriveUrl(url) {
+		if (!url) return '';
+		url = String(url).trim();
+		const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?.*id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]+)/i;
+		const match = url.match(driveRegex);
+		if (match && match[1]) {
+			return 'https://lh3.googleusercontent.com/d/' + match[1];
+		}
+		return url;
+	}
+
+	// Live preview of image (JPG, PNG, GIF, WEBP, Google Drive) in ACP table
+	$(document).off('input change', '#ad-manager-acp .ad-image').on('input change', '#ad-manager-acp .ad-image', function () {
+		const rawUrl = $(this).val().trim();
+		const directUrl = formatGoogleDriveUrl(rawUrl);
+		const $img = $(this).closest('td').find('.ad-preview-img');
+		if (directUrl) {
+			$img.attr('src', directUrl).show();
+		} else {
+			$img.hide();
+		}
+	});
+
 	ACP.addAdRow = function (data) {
 		const ad = data || {
 			id: 'ad_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
@@ -60,7 +83,8 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 		const loc = ad.location || 'top';
 		const showSelector = loc === 'custom' ? '' : 'display: none;';
 		const showRepeat = loc === 'recent-feed' ? '' : 'display: none;';
-		const showPreview = ad.image ? 'block' : 'none';
+		const directPreviewUrl = formatGoogleDriveUrl(ad.image);
+		const showPreview = directPreviewUrl ? 'block' : 'none';
 		const isActive = ad.active !== false && ad.active !== 'false';
 
 		const rowHtml = `
@@ -71,10 +95,10 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 					</div>
 				</td>
 				<td>
-					<input type="text" class="form-control ad-name" placeholder="שם היחידה" value="${escapeAttr(ad.name)}">
+					<input type="text" class="form-control form-control-sm ad-name" placeholder="שם היחידה" value="${escapeAttr(ad.name)}">
 				</td>
 				<td>
-					<select class="form-select ad-location mb-1">
+					<select class="form-select form-select-sm ad-location mb-1">
 						<option value="top" ${loc === 'top' ? 'selected' : ''}>באנר עליון (לרוחב)</option>
 						<option value="bottom" ${loc === 'bottom' ? 'selected' : ''}>באנר תחתון (לרוחב)</option>
 						<option value="sidebar-right" ${loc === 'sidebar-right' ? 'selected' : ''}>סרגל צד ימין (לאורך)</option>
@@ -94,19 +118,19 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 					</div>
 				</td>
 				<td>
-					<input type="text" class="form-control ad-image mb-1" placeholder="קישור לתמונה (JPG, PNG, GIF, WEBP)" value="${escapeAttr(ad.image)}">
+					<input type="text" class="form-control form-control-sm ad-image mb-1" placeholder="קישור לתמונה או גוגל דרייב" value="${escapeAttr(ad.image)}">
 					<div class="text-center">
-						<img src="${escapeAttr(ad.image)}" class="ad-preview-img img-thumbnail" style="max-height: 40px; max-width: 120px; display: ${showPreview}; margin: 0 auto;" alt="תצוגה מקדימה">
+						<img src="${escapeAttr(directPreviewUrl)}" class="ad-preview-img img-thumbnail" style="max-height: 40px; max-width: 120px; display: ${showPreview}; margin: 0 auto;" alt="תצוגה מקדימה">
 					</div>
 				</td>
 				<td>
-					<input type="text" class="form-control ad-link" placeholder="https://example.com/target-page" value="${escapeAttr(ad.link)}">
+					<input type="text" class="form-control form-control-sm ad-link" placeholder="https://example.com/target-page" value="${escapeAttr(ad.link)}">
 				</td>
 				<td>
-					<input type="date" class="form-control ad-end-date" value="${escapeAttr(ad.endDate || '')}" title="תאריך סיום מוצג">
+					<input type="date" class="form-control form-control-sm ad-end-date" value="${escapeAttr(ad.endDate || '')}" title="תאריך סיום מוצג">
 				</td>
 				<td>
-					<textarea class="form-control ad-html" rows="1" placeholder="קוד HTML חלופי">${escapeHtml(ad.html)}</textarea>
+					<textarea class="form-control form-control-sm ad-html" rows="1" placeholder="קוד HTML חלופי">${escapeHtml(ad.html)}</textarea>
 				</td>
 				<td class="text-center align-middle">
 					<span class="badge bg-info text-dark ad-clicks">${ad.clicks || 0}</span>

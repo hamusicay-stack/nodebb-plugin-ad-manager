@@ -22,6 +22,20 @@ async function getStoredAds() {
 }
 
 /**
+ * Converts Google Drive share links to direct CDN image URLs
+ */
+function formatGoogleDriveUrl(url) {
+	if (!url) return '';
+	url = String(url).trim();
+	const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?.*id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]+)/i;
+	const match = url.match(driveRegex);
+	if (match && match[1]) {
+		return 'https://lh3.googleusercontent.com/d/' + match[1];
+	}
+	return url;
+}
+
+/**
  * Public API: Fetch active ad units for client-side injection
  */
 apiController.getAds = async function (req, res, next) {
@@ -46,10 +60,11 @@ apiController.getAds = async function (req, res, next) {
 				return (ad.html || (ad.image && ad.link)) && (ad.location || ad.selector);
 			})
 			.map(ad => {
+				const directImageUrl = formatGoogleDriveUrl(ad.image);
 				let effectiveHtml = ad.html;
-				if (!effectiveHtml && ad.image && ad.link) {
+				if (!effectiveHtml && directImageUrl && ad.link) {
 					const maxH = (ad.location === 'recent-feed' || ad.location === 'top' || ad.location === 'bottom') ? '160px' : '460px';
-					effectiveHtml = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%;"><img src="${ad.image}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:${maxH}; object-fit:contain; border-radius:6px; display:block; margin:0 auto;"></a>`;
+					effectiveHtml = `<a href="${ad.link}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%;"><img src="${directImageUrl}" alt="${ad.name || 'Ad'}" style="max-width:100%; max-height:${maxH}; object-fit:contain; border-radius:6px; display:block; margin:0 auto;"></a>`;
 				}
 				return {
 					id: ad.id,
@@ -57,7 +72,7 @@ apiController.getAds = async function (req, res, next) {
 					location: ad.location || 'top',
 					repeatEvery: parseInt(ad.repeatEvery, 10) || 5,
 					selector: ad.selector,
-					image: ad.image,
+					image: directImageUrl,
 					link: ad.link,
 					html: effectiveHtml
 				};
@@ -67,6 +82,7 @@ apiController.getAds = async function (req, res, next) {
 		next(err);
 	}
 };
+
 
 
 
