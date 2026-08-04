@@ -6,21 +6,60 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 	const ACP = {};
 
 	ACP.init = function () {
-		$.get(config.relative_path + '/api/admin/plugins/ad-manager/ads', function (res) {
+		const relPath = (typeof config !== 'undefined' && config.relative_path) ? config.relative_path : '';
+
+		// 1. Try reading ajaxify.data.ads first (populated natively by NodeBB on render)
+		let ads = (typeof ajaxify !== 'undefined' && ajaxify.data && Array.isArray(ajaxify.data.ads)) ? ajaxify.data.ads : null;
+
+		// 2. If ajaxify.data.ads is not found or empty, try reading embedded script tag
+		if (!ads || !ads.length) {
+			const dataElem = document.getElementById('ad-manager-saved-data');
+			if (dataElem && dataElem.textContent) {
+				const rawText = dataElem.textContent.trim();
+				if (rawText) {
+					const decoded = rawText
+						.replace(/&quot;/g, '"')
+						.replace(/&#34;/g, '"')
+						.replace(/&amp;/g, '&')
+						.replace(/&lt;/g, '<')
+						.replace(/&gt;/g, '>');
+					try {
+						ads = JSON.parse(decoded);
+					} catch (e) {}
+				}
+			}
+		}
+
+		function populateTable(adList) {
 			$('#ad-units-tbody').empty();
-			const ads = (res && res.ads) || [];
-			if (ads.length > 0) {
-				ads.forEach(function (ad) {
+			if (Array.isArray(adList) && adList.length > 0) {
+				adList.forEach(function (ad) {
 					ACP.addAdRow(ad);
 				});
 			} else {
 				ACP.addAdRow();
 			}
-		}).fail(function () {
-			$('#ad-units-tbody').empty();
-			ACP.addAdRow();
-		});
+		}
+
+		// If we already have ads from ajaxify or script tag, render them IMMEDIATELY
+		if (Array.isArray(ads) && ads.length > 0) {
+			populateTable(ads);
+		} else {
+			// 3. Fallback: Query database API directly using safe relPath
+			$.getJSON(relPath + '/api/admin/plugins/ad-manager/ads', function (res) {
+				if (res && res.success && Array.isArray(res.ads) && res.ads.length > 0) {
+					populateTable(res.ads);
+				} else if (Array.isArray(res) && res.length > 0) {
+					populateTable(res);
+				} else {
+					populateTable([]);
+				}
+			}).fail(function () {
+				populateTable([]);
+			});
+		}
 	};
+
 
 
 

@@ -47,6 +47,10 @@
 	</div>
 </div>
 
+<script id="ad-manager-saved-data" type="application/json">
+{{{adsJson}}}
+</script>
+
 <script>
 	require(['admin/plugins/ad-manager'], function (manager) {
 		if (manager && typeof manager.init === 'function') {
@@ -54,6 +58,7 @@
 		}
 	});
 </script>
+
 
 
 
