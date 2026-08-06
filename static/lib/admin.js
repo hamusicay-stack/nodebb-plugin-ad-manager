@@ -386,41 +386,6 @@
 		});
 	};
 
-
-
-
-
-
-
-		const relPath = (typeof config !== 'undefined' && config.relative_path) ? config.relative_path : '';
-		const csrfToken = (typeof config !== 'undefined' && config.csrf_token) ? config.csrf_token : '';
-
-		$.ajax({
-			url: relPath + '/api/admin/plugins/ad-manager/ads',
-			type: 'POST',
-			contentType: 'application/json',
-			data: JSON.stringify({ ads: ads }),
-			headers: {
-				'x-csrf-token': csrfToken
-			},
-			success: function (res) {
-				if (res && res.success) {
-					alerts.success('הגדרות Ad Manager נשמרו בהצלחה!');
-					if (res.ads && typeof ajaxify !== 'undefined' && ajaxify.data) {
-						ajaxify.data.ads = res.ads;
-					}
-				} else {
-					alerts.error('שגיאה בשמירת ההגדרות.');
-				}
-			},
-			error: function (err) {
-				alerts.error('שגיאה בשמירה: ' + (err.responseJSON ? err.responseJSON.error : 'Server Error'));
-			}
-		});
-	};
-
-
-
 	function escapeHtml(str) {
 		return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 	}
