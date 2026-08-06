@@ -6,8 +6,13 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 	const ACP = {};
 
 	ACP.init = function () {
+		console.log('[ad-manager-acp] ACP.init() called.');
+		const $tbody = $('#ad-units-tbody');
+		console.log('[ad-manager-acp] #ad-units-tbody element count in DOM:', $tbody.length);
+
 		// If #ad-units-tbody is not ready in DOM yet, retry shortly
-		if ($('#ad-units-tbody').length === 0) {
+		if ($tbody.length === 0) {
+			console.log('[ad-manager-acp] #ad-units-tbody not found in DOM yet. Retrying in 50ms...');
 			setTimeout(ACP.init, 50);
 			return;
 		}
@@ -15,26 +20,70 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 		let ads = null;
 
 		// 1. Try reading ajaxify.data.ads if already populated natively by NodeBB on render
-		if (typeof ajaxify !== 'undefined' && ajaxify.data && Array.isArray(ajaxify.data.ads) && ajaxify.data.ads.length > 0) {
-			ads = ajaxify.data.ads;
+		if (typeof ajaxify !== 'undefined' && ajaxify.data) {
+			console.log('[ad-manager-acp] ajaxify.data keys:', Object.keys(ajaxify.data));
+			if (Array.isArray(ajaxify.data.ads) && ajaxify.data.ads.length > 0) {
+				console.log(`[ad-manager-acp] Found ${ajaxify.data.ads.length} ads in ajaxify.data.ads.`);
+				ads = ajaxify.data.ads;
+			} else {
+				console.log('[ad-manager-acp] ajaxify.data.ads is empty or not an array:', ajaxify.data.ads);
+			}
+		} else {
+			console.log('[ad-manager-acp] ajaxify.data is undefined.');
+		}
+
+		// 2. Try reading embedded script tag if ajaxify.data.ads is absent
+		if (!ads || !ads.length) {
+			const dataElem = document.getElementById('ad-manager-saved-data');
+			if (dataElem && dataElem.textContent) {
+				const rawText = dataElem.textContent.trim();
+				console.log(`[ad-manager-acp] Raw script tag text length: ${rawText.length}`);
+				if (rawText) {
+					const decoded = rawText
+						.replace(/&quot;/g, '"')
+						.replace(/&#34;/g, '"')
+						.replace(/&amp;/g, '&')
+						.replace(/&lt;/g, '<')
+						.replace(/&gt;/g, '>');
+					try {
+						const parsed = JSON.parse(decoded);
+						if (Array.isArray(parsed) && parsed.length > 0) {
+							console.log(`[ad-manager-acp] Parsed ${parsed.length} ads from embedded script tag.`);
+							ads = parsed;
+						}
+					} catch (e) {
+						console.error('[ad-manager-acp] Failed to parse embedded script tag JSON:', e);
+					}
+				}
+			} else {
+				console.log('[ad-manager-acp] #ad-manager-saved-data script tag not found or empty.');
+			}
 		}
 
 		if (Array.isArray(ads) && ads.length > 0) {
+			console.log(`[ad-manager-acp] Rendering ${ads.length} ads directly into table.`);
 			populateTable(ads);
 		} else {
-			// 2. Fetch using direct API endpoint with safe relative path
+			// 3. Fetch using direct API endpoint with safe relative path
 			const relPath = (typeof config !== 'undefined' && config.relative_path) ? config.relative_path : '';
+			const apiUrl = relPath + '/api/admin/plugins/ad-manager/ads';
+			console.log(`[ad-manager-acp] Fetching ads via GET AJAX: ${apiUrl}`);
 			$.ajax({
-				url: relPath + '/api/admin/plugins/ad-manager/ads',
+				url: apiUrl,
 				type: 'GET',
 				success: function (res) {
+					console.log('[ad-manager-acp] GET API response:', res);
 					const fetchedAds = (res && res.ads) || [];
+					console.log(`[ad-manager-acp] GET API returned ${fetchedAds.length} ads.`);
 					populateTable(fetchedAds);
 				},
-				error: function (err) {
-					console.warn('[ad-manager] Failed to fetch ACP ads:', err);
+				error: function (xhr, status, error) {
+					console.error('[ad-manager-acp] Failed to fetch ACP ads via GET API:', status, error, xhr.status, xhr.responseText);
 					if ($('#ad-units-tbody .ad-unit-row').length === 0) {
+						console.log('[ad-manager-acp] Table is completely empty after API error. Populating 1 blank row.');
 						populateTable([]);
+					} else {
+						console.log('[ad-manager-acp] Table already has existing rows. Preserving DOM on API error.');
 					}
 				}
 			});
@@ -43,25 +92,32 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 
 	function populateTable(adList) {
 		const $tbody = $('#ad-units-tbody');
+		console.log(`[ad-manager-acp] populateTable called with ${adList ? adList.length : 0} items.`);
 		if ($tbody.length === 0) {
+			console.error('[ad-manager-acp] populateTable failed: #ad-units-tbody not in DOM.');
 			return;
 		}
 		$tbody.empty();
 		if (Array.isArray(adList) && adList.length > 0) {
-			adList.forEach(function (ad) {
+			adList.forEach(function (ad, i) {
+				console.log(`[ad-manager-acp] Rendering row ${i + 1}/${adList.length}:`, ad.name || ad.id);
 				ACP.addAdRow(ad);
 			});
 		} else {
+			console.log('[ad-manager-acp] adList is empty. Rendering 1 default blank row.');
 			ACP.addAdRow();
 		}
 	}
 
 	// Automatically trigger initialization when NodeBB completes ACP page transition
 	$(window).on('action:ajaxify.end', function (ev, data) {
+		console.log('[ad-manager-acp] action:ajaxify.end fired. Current URL:', data ? data.url : 'unknown');
 		if (data && data.url && data.url.startsWith('admin/plugins/ad-manager')) {
+			console.log('[ad-manager-acp] Matched ACP route admin/plugins/ad-manager. Running ACP.init()...');
 			ACP.init();
 		}
 	});
+
 
 
 
@@ -249,11 +305,12 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 	};
 
 	ACP.saveAds = function () {
+		console.log('[ad-manager-acp] ACP.saveAds() called.');
 		const ads = [];
 
-		$('.ad-unit-row').each(function () {
+		$('.ad-unit-row').each(function (idx) {
 			const $row = $(this);
-			ads.push({
+			const adObj = {
 				id: $row.attr('data-id'),
 				active: $row.find('.ad-active').is(':checked'),
 				name: $row.find('.ad-name').val().trim(),
@@ -263,15 +320,53 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 				deviceTarget: $row.find('.ad-device-target').val(),
 				rotateInterval: parseInt($row.find('.ad-rotate-interval').val(), 10) || 9,
 				repeatEvery: parseInt($row.find('.ad-repeat-every').val(), 10) || 5,
-
 				selector: $row.find('.ad-selector').val().trim(),
 				image: $row.find('.ad-image').val().trim(),
 				link: $row.find('.ad-link').val().trim(),
 				endDate: $row.find('.ad-end-date').val().trim(),
 				html: $row.find('.ad-html').val().trim(),
 				clicks: parseInt($row.find('.ad-clicks').text(), 10) || 0
-			});
+			};
+			console.log(`[ad-manager-acp] Collected row ${idx + 1}:`, adObj.name || adObj.id);
+			ads.push(adObj);
 		});
+
+		console.log(`[ad-manager-acp] Total ads collected from DOM to save: ${ads.length}`);
+
+		const relPath = (typeof config !== 'undefined' && config.relative_path) ? config.relative_path : '';
+		const csrfToken = (typeof config !== 'undefined' && config.csrf_token) ? config.csrf_token : '';
+		const saveUrl = relPath + '/api/admin/plugins/ad-manager/ads';
+
+		console.log(`[ad-manager-acp] Sending POST request to ${saveUrl} with ${ads.length} items...`);
+
+		$.ajax({
+			url: saveUrl,
+			type: 'POST',
+			contentType: 'application/json',
+			data: JSON.stringify({ ads: ads }),
+			headers: {
+				'x-csrf-token': csrfToken
+			},
+			success: function (res) {
+				console.log('[ad-manager-acp] Save POST response:', res);
+				if (res && res.success) {
+					alerts.success('הגדרות Ad Manager נשמרו בהצלחה!');
+					if (res.ads && typeof ajaxify !== 'undefined' && ajaxify.data) {
+						ajaxify.data.ads = res.ads;
+						console.log(`[ad-manager-acp] Updated ajaxify.data.ads with ${res.ads.length} items.`);
+					}
+				} else {
+					console.error('[ad-manager-acp] Save failed on server:', res);
+					alerts.error('שגיאה בשמירת ההגדרות.');
+				}
+			},
+			error: function (xhr, status, error) {
+				console.error('[ad-manager-acp] Save POST error:', status, error, xhr.status, xhr.responseText);
+				alerts.error('שגיאה בשמירה: ' + (xhr.responseJSON ? xhr.responseJSON.error : 'Server Error'));
+			}
+		});
+	};
+
 
 
 
