@@ -1,9 +1,18 @@
 'use strict';
 
-/* global define, $, config, ajaxify */
+/* global define, module, $, config, ajaxify, app */
 
-define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
+(function (factory) {
+	if (typeof define === 'function' && define.amd) {
+		define('admin/plugins/ad-manager', ['alerts'], factory);
+	} else if (typeof module === 'object' && module.exports) {
+		module.exports = factory(require('alerts'));
+	} else {
+		window.adManagerACP = factory(window.alerts);
+	}
+}(function (alerts) {
 	const ACP = {};
+
 
 	ACP.init = function () {
 		console.log('[ad-manager-acp] ACP.init() called.');
@@ -410,6 +419,14 @@ define('admin/plugins/ad-manager', ['alerts'], function (alerts) {
 		return String(str || '').replace(/"/g, '&quot;');
 	}
 
+	if (typeof window !== 'undefined' && window.location && window.location.pathname.includes('/admin/plugins/ad-manager')) {
+		$(function () {
+			console.log('[ad-manager-acp] Direct pathname match. Running ACP.init() on document ready...');
+			ACP.init();
+		});
+	}
+
 	return ACP;
-});
+}));
+
 

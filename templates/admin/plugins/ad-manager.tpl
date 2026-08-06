@@ -52,14 +52,12 @@
 </script>
 
 <script>
-	console.log('[ad-manager-template] ad-manager.tpl inline script executed. Requiring admin/plugins/ad-manager...');
-	require(['admin/plugins/ad-manager'], function (manager) {
-		console.log('[ad-manager-template] RequireJS resolved admin/plugins/ad-manager module:', manager);
-		if (manager && typeof manager.init === 'function') {
-			manager.init();
-		}
-	});
+	console.log('[ad-manager-template] ad-manager.tpl template loaded in DOM.');
+	if (window.adManagerACP && typeof window.adManagerACP.init === 'function') {
+		window.adManagerACP.init();
+	}
 </script>
+
 
 
 
