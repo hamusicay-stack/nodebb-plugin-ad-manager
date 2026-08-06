@@ -47,16 +47,13 @@
 	</div>
 </div>
 
-<script id="ad-manager-saved-data" type="application/json">
-{{{adsJson}}}
-</script>
-
 <script>
-	console.log('[ad-manager-template] ad-manager.tpl template loaded in DOM.');
+	console.log('[AdManager Debug] ad-manager.tpl loaded into DOM.');
 	if (window.adManagerACP && typeof window.adManagerACP.init === 'function') {
 		window.adManagerACP.init();
 	}
 </script>
+
 
 
 
