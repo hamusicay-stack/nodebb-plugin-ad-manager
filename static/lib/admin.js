@@ -3,15 +3,25 @@
 /* global define, module, $, config, ajaxify, app */
 
 (function (factory) {
+	const getAlerts = function () {
+		if (typeof window !== 'undefined' && window.alerts) return window.alerts;
+		try { return require('alerts'); } catch (e) { return null; }
+	};
 	if (typeof define === 'function' && define.amd) {
 		define('admin/plugins/ad-manager', ['alerts'], factory);
-	} else if (typeof module === 'object' && module.exports) {
-		module.exports = factory(require('alerts'));
-	} else {
-		window.adManagerACP = factory(window.alerts);
+		define('plugins/ad-manager', ['alerts'], factory);
+		define('./plugins/ad-manager', ['alerts'], factory);
+		define(['alerts'], factory);
+	}
+	if (typeof module === 'object' && module.exports) {
+		module.exports = factory(getAlerts());
+	}
+	if (typeof window !== 'undefined') {
+		window.adManagerACP = factory(getAlerts());
 	}
 }(function (alerts) {
 	const ACP = {};
+
 
 
 	ACP.init = function () {
